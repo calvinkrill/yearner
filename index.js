@@ -1554,7 +1554,7 @@ client.on('interactionCreate', async (interaction) => {
     let yearnChannel = selectedYearnChannel || interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildText && channel.name === 'yearn'
     );
-    let logsChannel = selectedLogsChannel || interaction.guild.channels.cache.find(
+    let logsChannel = interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildText && channel.name === 'logs'
     );
 

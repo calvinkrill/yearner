@@ -2,6 +2,7 @@
 // 900+ triggers | No Cooldown | Tagalog Yearner System
 
 const https = require('https');
+const http = require('http');
 
 const yearnCategories = [
   {
@@ -449,7 +450,7 @@ async function getAIResponse(userMessage) {
   if (!apiKey) return null;
 
   const apiBase = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1';
-  const model = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
   const systemPrompt = `You are a melancholic, moody, and poetic AI assistant. 
   You respond to people who are "yearning" or feeling heartbreak. 
@@ -470,9 +471,14 @@ async function getAIResponse(userMessage) {
   });
 
   try {
-    const url = new URL(`${apiBase}/chat/completions`);
+    const baseUrl = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+    const endpoint = process.env.OPENAI_CHAT_COMPLETIONS_PATH || '/chat/completions';
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = new URL(`${baseUrl}${normalizedEndpoint}`);
+    const requestModule = url.protocol === 'http:' ? http : https;
     const options = {
       hostname: url.hostname,
+      port: url.port || undefined,
       path: url.pathname + url.search,
       method: 'POST',
       headers: {
@@ -483,17 +489,22 @@ async function getAIResponse(userMessage) {
     };
 
     return new Promise((resolve) => {
-      const req = https.request(options, (res) => {
+      const req = requestModule.request(options, (res) => {
         let body = '';
         res.on('data', (chunk) => body += chunk);
         res.on('end', () => {
           try {
             const json = JSON.parse(body);
-            if (json.choices && json.choices[0] && json.choices[0].message) {
-              resolve(json.choices[0].message.content.trim());
-            } else {
-              resolve(null);
+            const content = json?.choices?.[0]?.message?.content;
+            if (typeof content === 'string' && content.trim()) return resolve(content.trim());
+            if (Array.isArray(content)) {
+              const merged = content
+                .map((entry) => (typeof entry === 'string' ? entry : entry?.text || ''))
+                .join(' ')
+                .trim();
+              if (merged) return resolve(merged);
             }
+            resolve(null);
           } catch (e) {
             resolve(null);
           }
