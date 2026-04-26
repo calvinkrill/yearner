@@ -489,7 +489,6 @@ const flattenedTagalogYearnAutoResponses = {
 };
 
 const AUTO_RESPONSES = {
-  tagalogYearn: flattenedTagalogYearnAutoResponses,
   yearning: {
     triggers: [
       "i miss you", "i miss her", "i miss him", "i miss them",
@@ -886,6 +885,10 @@ client.on('messageCreate', async (message) => {
   if (silent) return; 
 
   const content = message.content.toLowerCase(); 
+
+  if (await handleYearn(message)) {
+    return;
+  }
 
   for (const category of Object.values(AUTO_RESPONSES)) {
     category.triggers = uniqueNormalized(category.triggers);
