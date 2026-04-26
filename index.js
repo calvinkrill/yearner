@@ -1,6 +1,7 @@
 require('dotenv').config(); 
 const { handleYearn } = require('./yearnAutoResponse');
 const { timelyQuotes } = require('./timelyQuotes');
+const OpenAI = require('openai');
 const {
   Client,
   GatewayIntentBits,
@@ -24,6 +25,10 @@ const client = new Client({
   ] 
 }); 
 
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
 const yearnSetupChannels = new Map();
 const quoteChannelSettings = new Map();
 const confessionQueues = new Map();
@@ -36,6 +41,8 @@ const SUBMIT_CONFESSION_ID = 'yearn_submit_confession';
 const REPLY_CONFESSION_ID = 'yearn_reply_confession';
 const CONFESSION_MODAL_ID = 'yearn_confession_modal';
 const REPLY_MODAL_PREFIX = 'yearn_reply_modal_';
+
+const QUESTION_STARTER_REGEX = /^(what|how|why|when|where|who|can|is|are|do|does|did)\b/i;
 
 // 🌙 Core lines 
 const yearningLines = [ 
@@ -835,6 +842,53 @@ async function simulateTyping(channel, enabled = true) {
   return true;
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function isQuestion(text) {
+  const trimmed = (text || '').trim();
+  if (!trimmed) return false;
+  return trimmed.includes('?') || QUESTION_STARTER_REGEX.test(trimmed);
+}
+
+async function maybeReplyToQuestion(message, content, settings) {
+  if (!openai || !isQuestion(content)) return false;
+
+  const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+  if (!proceed) return true;
+
+  const typingTime = Math.min(3000, Math.max(600, content.length * 50));
+  await sleep(typingTime);
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful Discord assistant. Answer clearly, shortly, and naturally like a real person.'
+        },
+        { role: 'user', content }
+      ]
+    });
+
+    const reply = response?.choices?.[0]?.message?.content?.trim();
+    if (!reply) return false;
+
+    await message.reply({
+      content: reply,
+      allowedMentions: { repliedUser: false }
+    });
+    return true;
+  } catch (error) {
+    console.error('Q&A reply failed:', error);
+    await message.reply({
+      content: 'I tried to answer but something went wrong 😔',
+      allowedMentions: { repliedUser: false }
+    }).catch(() => {});
+    return true;
+  }
+}
+
 // 🎲 helpers 
 function random(arr) { 
   return arr[Math.floor(Math.random() * arr.length)]; 
@@ -1367,6 +1421,10 @@ client.on('messageCreate', async (message) => {
       });
       return;
     }
+  }
+
+  if (await maybeReplyToQuestion(message, message.content, settings)) {
+    return;
   }
 
   // soft command handling: /miss @user or miss @user, /yearn @user or yearn @user, etc.
