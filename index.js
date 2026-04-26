@@ -761,7 +761,7 @@ const SOFT_COMMAND_NAMES = Object.keys(SOFT_COMMANDS);
 let belovedUserId = null; 
 let mood = "neutral"; 
 let silent = false; 
-let memories = []; 
+const lastMessageByUser = new Map();
 
 // 🎲 helpers 
 function random(arr) { 
@@ -964,6 +964,8 @@ client.on('messageCreate', async (message) => {
 
   const content = message.content.toLowerCase(); 
   const normalizedContent = content.replace(/[^a-z0-9À-ÿñÑ\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const previousMessage = lastMessageByUser.get(message.author.id);
+  lastMessageByUser.set(message.author.id, message.content);
 
   if (await handleYearn(message)) {
     return;
@@ -1011,11 +1013,6 @@ client.on('messageCreate', async (message) => {
     return delayedReply(message, "you're here… i didn't expect that"); 
   } 
 
-  // store memory 
-  if (Math.random() < 0.1) { 
-    memories.push(message.content); 
-  } 
-
   // triggers 
   for (const word in triggerWords) { 
     if (content.includes(word)) { 
@@ -1028,9 +1025,9 @@ client.on('messageCreate', async (message) => {
     return message.channel.send(random(rareLines)); 
   } 
 
-  // memory callback 
-  if (memories.length > 0 && Math.random() < 0.03) { 
-    return message.channel.send(`you said something before… "${random(memories)}"`); 
+  // memory callback (per-user last message)
+  if (previousMessage && Math.random() < 0.03) { 
+    return message.channel.send(`you said something before… "${previousMessage}"`); 
   } 
 
   // glitch message 
