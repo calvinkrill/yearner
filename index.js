@@ -74,7 +74,411 @@ const uniqueNormalized = (items) => {
   });
 };
 
+
+const tagalogYearnAutoResponses = [
+  {
+    triggers: [
+      "miss na kita", "namimiss kita", "miss ko siya", "miss ko na siya", "miss kita sobra",
+      "miss na miss kita", "namimiss pa rin kita", "miss ko na boses mo", "miss ko yakap mo", "miss ko tawa mo"
+    ],
+    responses: [
+      "miss mo lang yan, wag mo muna i-chat 😭",
+      "yearner spotted agad",
+      "sana miss ka rin niya, pero pahinga muna",
+      "ang lala ng miss era mo",
+      "hinga muna, wag relapse"
+    ]
+  },
+  {
+    triggers: [
+      "mahal pa rin kita", "mahal ko pa siya", "love ko pa rin siya", "mahal pa rin niya kaya ako",
+      "mahal kita hanggang ngayon", "di pa rin nawawala feelings ko", "may feelings pa ako",
+      "mahal ko pa rin ex ko", "gusto ko pa rin siya", "di ko siya kayang kalimutan"
+    ],
+    responses: [
+      "mahal mo pa, pero mahalin mo rin sarili mo",
+      "okay lang magmahal pa, pero wag ubusin sarili",
+      "loyal ka, pero sana sa tamang tao",
+      "feelings are valid, pero boundaries din",
+      "yearning level: intense"
+    ]
+  },
+  {
+    triggers: [
+      "balik ka na", "bumalik ka na", "balikan mo ako", "balikan mo na ako", "sana bumalik siya",
+      "sana bumalik ka", "balik tayo", "balik na tayo", "gusto ko bumalik siya", "bumalik ka please"
+    ],
+    responses: [
+      "ang sakit ng balik ka na era",
+      "kung babalik, dapat mas maayos na",
+      "wag mag beg, protect your peace",
+      "minsan closure na ang hindi pagbalik",
+      "sana healing muna bago balik"
+    ]
+  },
+  {
+    triggers: [
+      "chat ko na ba", "ichachat ko ba", "mag chat na ba ako", "replyan ko ba", "mag message ba ako",
+      "i-chat ko siya", "dapat ba akong mag chat", "send ko na ba", "imessage ko ba", "dm ko na ba"
+    ],
+    responses: [
+      "NO muna, emotional ka pa 😭",
+      "type mo sa notes, wag sa chat",
+      "pag gabi na, automatic no",
+      "inom tubig muna bago magdesisyon",
+      "wag mo hayaang yearning ang mag send"
+    ]
+  },
+  {
+    triggers: [
+      "sana tayo ulit", "sana tayo nalang ulit", "sana kami ulit", "sana kami nalang ulit",
+      "sana bumalik sa dati", "sana dati nalang", "sana hindi natapos", "sana hindi kami naghiwalay",
+      "sana ako nalang", "sana piliin niya ako"
+    ],
+    responses: [
+      "sana era is dangerous 😭",
+      "hindi lahat ng sana dapat habulin",
+      "manifesting peace, not relapse",
+      "sana ikaw rin piliin mo sarili mo",
+      "ang sakit ng what if"
+    ]
+  },
+  {
+    triggers: [
+      "iniisip pa rin kita", "lagi kitang iniisip", "naiisip ko siya", "di mawala sa isip ko",
+      "nasa isip ko siya", "siya pa rin nasa isip ko", "iniisip kaya niya ako", "naiisip kaya niya ako",
+      "gabi gabi ko siya naiisip", "umaga palang siya na agad"
+    ],
+    responses: [
+      "rent free sa utak mo ah",
+      "okay lang maalala, wag lang mag-stalk",
+      "overthinking plus yearning combo",
+      "pahinga rin utak mo please",
+      "baka kailangan mo muna mag focus sa sarili"
+    ]
+  },
+  {
+    triggers: [
+      "ang sakit", "sakit pa rin", "nasasaktan ako", "sakit mo", "sakit ng ginawa niya",
+      "ang sakit niya mahalin", "ang sakit maghintay", "sakit ng memories", "sakit ng miss kita",
+      "sakit ng hindi pinili"
+    ],
+    responses: [
+      "yakap, pero virtual muna 🫂",
+      "valid yan, gagaan din yan",
+      "iyak mo lang, wag mo i-chat",
+      "healing takes time",
+      "masakit ngayon, pero hindi forever"
+    ]
+  },
+  {
+    triggers: [
+      "hinihintay ko siya", "aantayin kita", "waiting pa rin", "maghihintay ako", "antay pa rin ako",
+      "hinihintay pa rin kita", "kahit matagal maghihintay ako", "waiting era", "antayin ko ba siya",
+      "baka bumalik pa siya"
+    ],
+    responses: [
+      "waiting era pero may self-respect dapat",
+      "huwag kalimutan mabuhay habang naghihintay",
+      "baka ikaw nalang naghihintay ha",
+      "loyal ka, pero sana worth it",
+      "wag gawing bahay ang waiting room"
+    ]
+  },
+  {
+    triggers: [
+      "cold na siya", "ang cold niya", "bat ang cold niya", "cold replies", "dry replies",
+      "dry siya mag chat", "ang tipid niya mag reply", "hindi na siya sweet", "iba na siya",
+      "parang wala na siyang pake"
+    ],
+    responses: [
+      "cold siya, wag mong painitin ego niya",
+      "baka sign na yan",
+      "hindi mo trabaho habulin ang lumalayo",
+      "clarity over confusion",
+      "protect your peace, bestie"
+    ]
+  },
+  {
+    triggers: [
+      "goodnight mahal", "goodnight love", "goodnight sa kanya", "good night miss you",
+      "goodnight kahit wala ka", "goodnight sa taong mahal ko", "tulog na mahal",
+      "goodnight my love", "goodnight kahit di tayo", "goodnight kahit masakit"
+    ],
+    responses: [
+      "goodnight yearner, pahinga ka na",
+      "tulog na, wag na mag relapse",
+      "sana mapanaginipan ka rin niya",
+      "goodnight sa feelings mong pagod na",
+      "sleep muna, overthink bukas nalang"
+    ]
+  },
+  {
+    triggers: [
+      "stalk ko siya", "chineck ko profile niya", "tiningnan ko story niya", "viewed my story",
+      "nag story siya", "active siya pero di nagreply", "online siya", "seen niya lang ako",
+      "di niya ako sineen", "nag react siya"
+    ],
+    responses: [
+      "stalking never helps 😭",
+      "wag mo gawing detective era yan",
+      "seen is not always a sign",
+      "close app muna, protect peace",
+      "wag mag decode ng bawat galaw"
+    ]
+  },
+  {
+    triggers: [
+      "di ako pinili", "pinili niya iba", "may iba na siya", "may bago na siya", "replaced na ako",
+      "pinalitan niya ako", "hindi ako enough", "bakit di ako", "ako nalang sana",
+      "mas pinili niya siya"
+    ],
+    responses: [
+      "hindi ibig sabihin kulang ka",
+      "hindi ka replacement item",
+      "you are enough, wrong person lang",
+      "masakit pero hindi mo kasalanan lahat",
+      "someday pipiliin ka nang buo"
+    ]
+  },
+  {
+    triggers: [
+      "what if kami pa", "what if tayo pa", "what if di kami natapos", "what if bumalik",
+      "what if ako pa rin", "what if mahal niya pa ako", "what if miss niya ako",
+      "what if chat ko", "what if siya talaga", "what if hindi ko binitawan"
+    ],
+    responses: [
+      "what if era hurts the most",
+      "wag kang tumira sa what if",
+      "focus sa what is, hindi what if",
+      "minsan lesson lang talaga",
+      "what if you choose yourself this time"
+    ]
+  },
+  {
+    triggers: [
+      "di ko siya makalimutan", "paano siya kalimutan", "hirap kalimutan", "ayoko siya kalimutan",
+      "di ko kaya mag move on", "move on na ba", "moving on hurts", "di pa ako naka move on",
+      "hanggang ngayon siya pa rin", "siya pa rin talaga"
+    ],
+    responses: [
+      "one day, hindi na ganito kasakit",
+      "small steps lang sa moving on",
+      "wag madaliin ang healing",
+      "makakaya mo rin yan",
+      "hindi ka stuck forever"
+    ]
+  },
+  {
+    triggers: [
+      "ikaw pa rin", "siya pa rin", "ikaw lang talaga", "siya lang gusto ko",
+      "walang iba", "ikaw lang mahal ko", "siya lang mahal ko", "ikaw pa rin pipiliin ko",
+      "siya pa rin pipiliin ko", "ikaw ang pahinga ko"
+    ],
+    responses: [
+      "grabe ang loyalty mo",
+      "sweet pero ingat sa sarili",
+      "ikaw pa rin, pero ikaw muna ngayon",
+      "piliin mo rin sarili mo",
+      "yearner level: loyal soldier"
+    ]
+  },
+  {
+    triggers: [
+      "naalala ko siya", "naalala kita", "memories namin", "alaala niya", "bumalik memories",
+      "nostalgia hits", "bigla ko siyang naalala", "naalala ko usapan namin", "naalala ko dati",
+      "miss ko old us"
+    ],
+    responses: [
+      "memories hit different talaga",
+      "okay lang maalala, pero wag bumalik sa sakit",
+      "old memories, new boundaries",
+      "nostalgia is not always a sign",
+      "dati yun, alagaan mo ngayon mo"
+    ]
+  },
+  {
+    triggers: [
+      "kailan kaya kami", "kailan kaya siya babalik", "kailan kaya ako pipiliin",
+      "kailan kaya magiging kami", "kailan kaya ako magiging okay", "kailan matatapos sakit",
+      "kailan niya ako mamimiss", "kailan niya ako ichachat", "kailan niya marealize",
+      "kailan ako magiging enough"
+    ],
+    responses: [
+      "darating din clarity",
+      "hindi lahat ng kailan may sagot agad",
+      "for now, heal muna",
+      "hindi mo kailangan hintayin lahat",
+      "you are enough already"
+    ]
+  },
+  {
+    triggers: [
+      "ayoko na pero miss ko", "pagod na ako pero mahal ko", "gusto ko na bumitaw",
+      "di ko alam gagawin", "gulong gulo ako", "confused ako", "di ko alam kung lalaban",
+      "lalaban pa ba ako", "bitaw na ba", "kapagod magmahal"
+    ],
+    responses: [
+      "pagod ka na, pahinga muna",
+      "love should not destroy you",
+      "confusion is also an answer sometimes",
+      "wag magdesisyon habang durog",
+      "choose peace when love feels heavy"
+    ]
+  },
+  {
+    triggers: [
+      "crush ko pa rin siya", "happy crush ko siya", "delulu ako", "delulu malala",
+      "delulu era", "baka may chance", "may chance kaya", "feeling ko gusto niya ako",
+      "nag assume ako", "kinikilig pa rin ako"
+    ],
+    responses: [
+      "delulu responsibly 😭",
+      "kilig lang, wag agad wedding plan",
+      "baka sign, baka imagination",
+      "soft crush era activated",
+      "enjoy kilig, keep expectations low"
+    ]
+  },
+  {
+    triggers: [
+      "seen lang", "delivered lang", "di nag reply", "di nag chat", "di ako nireplyan",
+      "late reply siya", "hindi na nag update", "di na nag goodnight", "di na nag goodmorning",
+      "di na siya nag care"
+    ],
+    responses: [
+      "matched energy muna",
+      "wag ka maghabol sa seen zone",
+      "late reply, early pain",
+      "di ka inbox decoration",
+      "you deserve effort too"
+    ]
+  },
+  {
+    triggers: [
+      "good morning mahal", "good morning love", "morning miss you", "umaga na miss pa rin kita",
+      "gising na mahal", "good morning kahit wala ka", "good morning sa kanya",
+      "morning thoughts siya", "siya agad naisip ko", "pag gising siya agad"
+    ],
+    responses: [
+      "good morning yearner ☀️",
+      "umaga palang relapse agad?",
+      "kape muna bago feelings",
+      "new day, same yearning",
+      "start your day with self-love din"
+    ]
+  },
+  {
+    triggers: [
+      "sino na mahal niya", "may mahal na ba siya", "may kausap na siya", "may nilalandi siya",
+      "may bago na ba siya", "may crush na siya", "may girlfriend na siya", "may boyfriend na siya",
+      "may jowa na siya", "di na ako mahal"
+    ],
+    responses: [
+      "wag mo saktan sarili mo sa kakahula",
+      "hindi lahat kailangan mong malaman",
+      "curiosity can hurt, ingat",
+      "focus sa peace mo",
+      "kahit may iba, hindi ka nawalan ng value"
+    ]
+  },
+  {
+    triggers: [
+      "sorry mahal", "sorry love", "sorry miss kita", "sorry kung mahal pa rin kita",
+      "sorry kung makulit", "sorry kung naghihintay pa rin", "sorry kung nasaktan kita",
+      "sorry kung bumalik ako", "sorry kung clingy ako", "sorry kung mahal kita"
+    ],
+    responses: [
+      "sorry era hits hard",
+      "accountability plus healing",
+      "okay lang mag sorry, pero respect boundaries",
+      "sincere sorry, quiet actions",
+      "wag gawing excuse ang love"
+    ]
+  },
+  {
+    triggers: [
+      "gusto ko siya makita", "gusto kita makita", "kita tayo ulit", "miss ko makita siya",
+      "makita lang kita okay na", "gusto ko siyang puntahan", "puntahan ko ba siya",
+      "sana makita kita", "one last kita", "last meet na"
+    ],
+    responses: [
+      "one last meet usually not last 😭",
+      "isip muna bago puntahan",
+      "miss mo lang, wag biglang appear",
+      "respect space muna",
+      "seeing them might restart the pain"
+    ]
+  },
+  {
+    triggers: [
+      "di ko kaya wala siya", "di ko kaya wala ka", "sanay ako sa kanya", "sanay ako sayo",
+      "empty without you", "kulang araw ko", "kulang ako pag wala siya", "hinahanap hanap kita",
+      "hinahanap ko siya", "parang kulang lahat"
+    ],
+    responses: [
+      "you can learn to be okay again",
+      "sanay ka lang, pero kakayanin mo",
+      "empty ngayon, pero mapupuno ulit",
+      "you existed before them too",
+      "one day, hindi na ganito kabigat"
+    ]
+  }
+];
+
+const tagalogYearnLyrics = [
+  "Kung pwede lang ibalik ang dati, hindi na sana kita binitawan.",
+  "Sa bawat tahimik na gabi, pangalan mo pa rin ang dasal ko.",
+  "Hindi ka na nandito, pero ikaw pa rin ang hinahanap ko.",
+  "Pinilit kong kalimutan ka, pero puso ko ang ayaw sumunod.",
+  "Kung tayo talaga, bakit parang ako lang ang lumalaban?",
+  "Unti-unti kitang binitiwan, pero buong buo kitang minahal.",
+  "Sa bawat ngiti ko, may lungkot na ikaw lang ang dahilan.",
+  "Hindi ko alam kung saan ka nagsimula mawala sa akin.",
+  "Hanggang ngayon, ikaw pa rin ang pahinga na hindi ko maabot.",
+  "Sinubukan kong maging okay, pero ikaw pa rin ang kulang.",
+  "Sa dami ng tao, ikaw pa rin ang hinahanap ng puso ko.",
+  "Kung hindi tayo, bakit parang ikaw lang ang tama?",
+  "Tinanggap ko na wala ka na, pero hindi pa rin ako sanay.",
+  "Ang hirap maging matapang kung ikaw ang dahilan ng kahinaan ko.",
+  "Kung pwede lang kalimutan, matagal na kitang binitawan.",
+  "Sa bawat alaala, ikaw pa rin ang laman.",
+  "Pinili kitang mahalin kahit hindi mo ako pinili.",
+  "Hindi ka na bumalik, pero ako nandito pa rin.",
+  "Ang sakit pala magmahal nang mag-isa.",
+  "Hindi na tayo, pero ikaw pa rin ang gusto ko.",
+  "Sa bawat patak ng ulan, ikaw ang naaalala ko.",
+  "Kung may rewind lang, hindi kita hahayaang mawala.",
+  "Tahimik na mundo, pero ang ingay ng puso ko para sayo.",
+  "Ikaw ang kanta na hindi ko matapos.",
+  "Sa huli, ako lang pala ang nag stay.",
+  "Hindi ko kayang burahin ang ikaw sa puso ko.",
+  "Kung pagmamahal ang laban, bakit ako ang talo?",
+  "Pinilit kong maging okay kahit hindi.",
+  "Ikaw pa rin kahit wala ka na.",
+  "Mahal pa rin kita, kahit hindi na pwede.",
+  "Kung ikaw ang sakit, bakit ikaw pa rin ang gusto?",
+  "Hinintay kita, kahit hindi mo ako hinintay.",
+  "Sa bawat araw, mas lalo kitang nami-miss.",
+  "Hindi ko alam paano magsimula ulit nang wala ka.",
+  "Ang daming sana, pero wala nang tayo.",
+  "Ikaw pa rin ang pinakamagandang maling nangyari sa akin.",
+  "Kung pagmamahal ang sukatan, sobra pa ang binigay ko.",
+  "Iniwan mo ako, pero hindi kita iniwan sa puso ko.",
+  "Kahit anong gawin ko, ikaw pa rin.",
+  "Ang hirap mag move on kung ikaw pa rin ang gusto ko."
+];
+
+const flattenedTagalogYearnAutoResponses = {
+  triggers: tagalogYearnAutoResponses.flatMap((entry) => entry.triggers),
+  responses: [
+    ...tagalogYearnAutoResponses.flatMap((entry) => entry.responses),
+    ...tagalogYearnLyrics
+  ]
+};
+
 const AUTO_RESPONSES = {
+  tagalogYearn: flattenedTagalogYearnAutoResponses,
   yearning: {
     triggers: [
       "i miss you", "i miss her", "i miss him", "i miss them",
