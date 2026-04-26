@@ -1,5 +1,12 @@
 require('dotenv').config(); 
-const { Client, GatewayIntentBits, EmbedBuilder, ApplicationCommandOptionType } = require('discord.js'); 
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ApplicationCommandOptionType,
+  ChannelType,
+  PermissionsBitField
+} = require('discord.js'); 
 
 const client = new Client({ 
   intents: [ 
@@ -8,6 +15,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent 
   ] 
 }); 
+
+const yearnSetupChannels = new Map();
 
 // 🌙 Core lines 
 const yearningLines = [ 
@@ -386,7 +395,7 @@ function getLine() {
 client.once('ready', () => { 
   console.log(`Logged in as ${client.user.tag}`); 
 
-  const slashCommands = SOFT_COMMAND_NAMES.map((name) => ({
+  const softCommands = SOFT_COMMAND_NAMES.map((name) => ({
     name,
     description: `Send a soft ${name} message`,
     options: [
@@ -398,6 +407,14 @@ client.once('ready', () => {
       }
     ]
   }));
+
+  const slashCommands = [
+    ...softCommands,
+    {
+      name: 'setupyearn',
+      description: 'Create or set the yearn channel for this server'
+    }
+  ];
 
   client.application.commands.set(slashCommands)
     .then(() => console.log(`Registered ${slashCommands.length} slash commands.`))
@@ -522,6 +539,39 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   const commandName = interaction.commandName;
+  if (commandName === 'setupyearn') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageChannels)) {
+      await interaction.reply({ content: 'you need **Manage Channels** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    let yearnChannel = interaction.guild.channels.cache.find(
+      (channel) => channel.type === ChannelType.GuildText && channel.name === 'yearn'
+    );
+
+    if (!yearnChannel) {
+      yearnChannel = await interaction.guild.channels.create({
+        name: 'yearn',
+        type: ChannelType.GuildText,
+        reason: `/setupyearn requested by ${interaction.user.tag}`
+      });
+    }
+
+    yearnSetupChannels.set(interaction.guild.id, yearnChannel.id);
+
+    await interaction.reply({
+      content: `yearn channel is ready: ${yearnChannel}`,
+      ephemeral: true
+    });
+    return;
+  }
+
   if (!SOFT_COMMANDS[commandName]) return;
 
   const targetUser = interaction.options.getUser('user');
