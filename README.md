@@ -30,8 +30,18 @@ A moody Discord bot for late-night longing: ambient quotes, multilingual auto-re
 ### 3) Optional AI replies (OpenAI-compatible)
 - If `OPENAI_API_KEY` is set, triggered yearn messages have a chance to return an AI-generated poetic reply.
 - Uses OpenAI-compatible `chat/completions` endpoint settings from env vars.
+- AI replies can be toggled per server via `/yearnsettings ai_replies:true|false`.
 
-### 4) Soft emotion commands (slash + message style)
+### 4) Typing simulation (NEW)
+- Before many replies, the bot simulates typing for a short moment.
+- Sometimes it types, pauses, and sends nothing to add realism and tension.
+
+### 5) Sound / music integration
+- Yearn responses can occasionally include song references.
+- Sometimes drops a mood-based playlist link with lines like:
+  - `this reminds me of something…` + a song.
+
+### 6) Soft emotion commands (slash + message style)
 Supported command names:
 - `/miss`
 - `/longfor`
@@ -58,16 +68,24 @@ Message-style variants also work if the first token matches a command name and a
 - `miss @user`
 - `/miss @user`
 
-### 5) Anonymous Yearn panel
+### 7) Anonymous Yearn panel
 - `/setupyearn` creates (or reuses) a `#yearn` text channel.
 - Posts a panel with:
   - **Submit a Yearn!** button (opens modal)
   - **Reply** button (opens reply modal for a specific entry)
-- Anonymous yearns are posted as embeds and auto-numbered.
+- Anonymous yearns are posted as embeds and auto-numbered (starting at `#1` for new yearn channels).
 - Replies are posted as anonymous embeds attached to the target confession when possible.
 - Queueing logic prevents confession-number collisions during rapid submissions.
 
-### 6) Legacy trigger interactions
+### 8) Server settings (admin configurable)
+- `/yearnsettings` supports:
+  - Toggle AI replies
+  - Adjust mood speed (`mood_speed_minutes`)
+  - Enable/disable silence mode
+  - Set a specific quote channel
+  - Control random response frequency (`1-100%`)
+
+### 9) Legacy trigger interactions
 - Keyword trigger replies for words like `love`, `sleep`, and `bye`.
 - `!love @user` sets a “beloved” user ID for special reactions.
 
