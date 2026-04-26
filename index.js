@@ -54,12 +54,26 @@ const triggerWords = {
   ] 
 }; 
 
+
+const uniqueNormalized = (items) => {
+  const seen = new Set();
+  return items.filter((item) => {
+    const normalized = item.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+};
+
 const AUTO_RESPONSES = {
   yearning: {
     triggers: [
       "i miss you", "i miss her", "i miss him", "i miss them",
       "i miss us", "i still miss you", "wish you were here",
-      "come back", "i want you here", "i need you here"
+      "come back", "i want you here", "i need you here",
+      "imissyou", "missyou", "imissyousomuch", "mingaw nko nimo",
+      "mingaw ko niya", "i miss him so bad", "i miss her so bad",
+      "i miss you na"
     ],
     responses: [
       "💭 Some people stay in your heart even when they are far.",
@@ -77,7 +91,9 @@ const AUTO_RESPONSES = {
   love: {
     triggers: [
       "i love you", "ily", "i love her", "i love him",
-      "i love them", "love you", "i still love you"
+      "i love them", "love you", "i still love you", "iloveyou",
+      "iloveu", "iloveyousomuch", "i love her so bad", "i love him so bad",
+      "i love her so much", "i love you more"
     ],
     responses: [
       "🤍 Love is a heavy word, but a beautiful one.",
@@ -419,6 +435,9 @@ client.on('messageCreate', async (message) => {
   const content = message.content.toLowerCase(); 
 
   for (const category of Object.values(AUTO_RESPONSES)) {
+    category.triggers = uniqueNormalized(category.triggers);
+    category.responses = uniqueNormalized(category.responses);
+
     if (category.triggers.some(trigger => content.includes(trigger))) {
       await message.reply({
         content: random(category.responses),
