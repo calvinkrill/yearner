@@ -1,5 +1,6 @@
 require('dotenv').config(); 
 const { handleYearn } = require('./yearnAutoResponse');
+const { timelyQuotes } = require('./timelyQuotes');
 const {
   Client,
   GatewayIntentBits,
@@ -941,20 +942,19 @@ client.once('ready', () => {
     silent = Math.random() < 0.3; 
   }, 1000 * 60 * 60); 
 
-  // hourly message 
-  setInterval(() => { 
-    if (silent) return; 
+  // timely message: send only 1 quote every 10 minutes
+  setInterval(() => {
+    if (silent) return;
 
-    const channels = client.channels.cache.filter(c => c.isTextBased()); 
-    const channel = channels.random(); 
-    if (!channel) return; 
+    const channels = client.channels.cache.filter((c) => c.isTextBased());
+    const channel = channels.random();
+    if (!channel) return;
 
-    if (Math.random() < 0.2) { 
-      sendWithEdit(channel, getLine()); 
-    } else { 
-      channel.send(getLine()).catch(() => {}); 
-    } 
-  }, 1000 * 60 * 60); 
+    const quote = random(timelyQuotes);
+    if (!quote) return;
+
+    channel.send(quote).catch(() => {});
+  }, 1000 * 60 * 10);
 }); 
 
 // 💬 messages 
