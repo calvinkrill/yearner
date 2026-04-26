@@ -54,6 +54,119 @@ const triggerWords = {
   ] 
 }; 
 
+const AUTO_RESPONSES = {
+  yearning: {
+    triggers: [
+      "i miss you", "i miss her", "i miss him", "i miss them",
+      "i miss us", "i still miss you", "wish you were here",
+      "come back", "i want you here", "i need you here"
+    ],
+    responses: [
+      "💭 Some people stay in your heart even when they are far.",
+      "🌙 Missing someone feels louder at night.",
+      "💔 The heart remembers what it once held close.",
+      "🌧️ Some feelings do not leave easily.",
+      "🤍 Distance can be quiet, but the heart still speaks.",
+      "🥀 You can miss someone and still keep going.",
+      "✨ Some memories feel like home.",
+      "🫶 It sounds like they meant a lot to you.",
+      "🌌 Even silence can carry feelings.",
+      "💭 Missing someone is a soft kind of pain."
+    ]
+  },
+  love: {
+    triggers: [
+      "i love you", "ily", "i love her", "i love him",
+      "i love them", "love you", "i still love you"
+    ],
+    responses: [
+      "🤍 Love is a heavy word, but a beautiful one.",
+      "🫶 That feeling sounds real.",
+      "🌸 Love can be soft, loud, and confusing all at once.",
+      "💌 Some hearts speak even when words are small.",
+      "✨ Love feels different when it is sincere.",
+      "🌙 Some people become your favorite feeling.",
+      "💭 Real feelings are hard to hide.",
+      "🤍 That is sweet.",
+      "🫂 Love should feel safe and kind.",
+      "🌷 A soft heart is not a weakness."
+    ]
+  },
+  sad: {
+    triggers: [
+      "im sad", "i'm sad", "i am sad", "sad ako",
+      "i feel sad", "i feel empty", "i feel alone",
+      "i feel tired", "im tired", "i'm tired"
+    ],
+    responses: [
+      "🫂 You are not alone.",
+      "🤍 Take it slow. One breath at a time.",
+      "🌧️ Bad days do not last forever.",
+      "🕯️ It is okay to feel tired sometimes.",
+      "💭 Your feelings are valid.",
+      "🌙 Rest if your heart feels heavy.",
+      "🤍 You do not have to carry everything at once.",
+      "🫶 Be gentle with yourself today.",
+      "✨ Small steps still count.",
+      "🌸 You matter, even on quiet days."
+    ]
+  },
+  goodnight: {
+    triggers: [
+      "goodnight", "good night", "gn", "night night",
+      "sleep well", "matulog na", "tulog na"
+    ],
+    responses: [
+      "🌙 Goodnight, rest well.",
+      "✨ Sleep peacefully tonight.",
+      "💤 May your dreams feel soft.",
+      "🤍 Rest your mind. Tomorrow is another chance.",
+      "🌌 The night is quiet, so let your heart rest too.",
+      "🫶 Goodnight. You did enough today.",
+      "🌙 Close your eyes and breathe slowly.",
+      "💭 Sleep well, soft soul.",
+      "✨ May tomorrow be kinder.",
+      "💤 Rest now, you deserve peace."
+    ]
+  },
+  goodmorning: {
+    triggers: [
+      "good morning", "gm", "morning", "maayong buntag",
+      "rise and shine"
+    ],
+    responses: [
+      "☀️ Good morning. I hope today is kind to you.",
+      "🌸 New day, new chance.",
+      "✨ Good morning, soft soul.",
+      "🤍 I hope you smile today.",
+      "☕ Start slow, you got this.",
+      "🌞 May your day feel lighter.",
+      "🫶 Good morning. Take care of yourself.",
+      "🌷 A fresh day is here.",
+      "💭 I hope something good happens today.",
+      "☀️ Wake up gently, the world can wait."
+    ]
+  },
+  lonely: {
+    triggers: [
+      "im lonely", "i'm lonely", "i feel lonely",
+      "alone ako", "i feel alone", "nobody cares"
+    ],
+    responses: [
+      "🫂 You are not invisible.",
+      "🤍 Someone out there will be glad you stayed kind.",
+      "🌙 Feeling alone does not mean you are unwanted.",
+      "🫶 You deserve warmth and care.",
+      "💭 Loneliness is heavy, but it can pass.",
+      "✨ You are still worthy of love and friendship.",
+      "🌧️ Some nights feel empty, but morning still comes.",
+      "🤍 Your presence matters.",
+      "🫂 I hope you find comfort tonight.",
+      "🌸 You are more loved than you may feel right now."
+    ]
+  }
+};
+
 // 🫧 soft emotion commands
 const SOFT_COMMANDS = {
   miss: [
@@ -288,6 +401,16 @@ client.on('messageCreate', async (message) => {
   if (silent) return; 
 
   const content = message.content.toLowerCase(); 
+
+  for (const category of Object.values(AUTO_RESPONSES)) {
+    if (category.triggers.some(trigger => content.includes(trigger))) {
+      await message.reply({
+        content: random(category.responses),
+        allowedMentions: { repliedUser: false }
+      });
+      return;
+    }
+  }
 
   // /soft command handling: /miss @user, /yearn @user, etc.
   if (content.startsWith('/')) {
