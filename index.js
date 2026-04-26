@@ -821,12 +821,20 @@ function buildConfessionButtons(messageId = 'new') {
   );
 }
 
+function extractConfessionTag(confessionText) {
+  const hashtagMatch = confessionText.match(/#([a-z0-9_]+)/i);
+  return hashtagMatch ? hashtagMatch[1] : null;
+}
+
 function buildConfessionEmbed(confessionText, confessionNumber) {
+  const confessionTag = extractConfessionTag(confessionText);
+  const displayToken = confessionTag || confessionNumber;
+
   return new EmbedBuilder()
     .setColor(0x111827)
-    .setTitle(`Anonymous Yearner (#${confessionNumber})`)
+    .setTitle(`Anonymous Yearner (#${displayToken})`)
     .setDescription(`"${confessionText}"`)
-    .setFooter({ text: 'Submitted' })
+    .setFooter({ text: `Submitted • Entry #${confessionNumber}` })
     .setTimestamp(new Date());
 }
 
@@ -841,10 +849,10 @@ async function getNextConfessionNumber(channel) {
     const title = message.embeds?.[0]?.title;
     if (!title) continue;
 
-    const match = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
-    if (!match) continue;
-
-    const parsed = Number.parseInt(match[1], 10);
+    const footerText = message.embeds?.[0]?.footer?.text ?? '';
+    const entryMatch = footerText.match(/Entry #(\d+)/);
+    const titleMatch = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
+    const parsed = Number.parseInt(entryMatch?.[1] ?? titleMatch?.[1] ?? '', 10);
     if (Number.isNaN(parsed)) continue;
     highestNumber = Math.max(highestNumber, parsed);
   }
@@ -876,10 +884,10 @@ async function getNextConfessionNumber(channel) {
     const title = message.embeds?.[0]?.title;
     if (!title) continue;
 
-    const match = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
-    if (!match) continue;
-
-    const parsed = Number.parseInt(match[1], 10);
+    const footerText = message.embeds?.[0]?.footer?.text ?? '';
+    const entryMatch = footerText.match(/Entry #(\d+)/);
+    const titleMatch = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
+    const parsed = Number.parseInt(entryMatch?.[1] ?? titleMatch?.[1] ?? '', 10);
     if (Number.isNaN(parsed)) continue;
     highestNumber = Math.max(highestNumber, parsed);
   }
@@ -1178,7 +1186,7 @@ client.on('interactionCreate', async (interaction) => {
 
       await runWithConfessionQueue(channel.id, async () => {
         const confessionNumber = await getNextConfessionNumber(channel);
-        const embed = buildConfessionEmbed(interaction.user.tag, confessionText, confessionNumber);
+        const embed = buildConfessionEmbed(confessionText, confessionNumber);
 
         const confessionMessage = await channel.send({
           embeds: [embed],
