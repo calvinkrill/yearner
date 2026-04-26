@@ -88,6 +88,10 @@ Message-style variants also work if the first token matches a command name and a
 ### 9) Legacy trigger interactions
 - Keyword trigger replies for words like `love`, `sleep`, and `bye`.
 - `!love @user` sets a “beloved” user ID for special reactions.
+- Personal reminder memory:
+  - `note this - "your text"` stores one note per user.
+  - Reply with `note this` to save the replied user's message as that user's note.
+  - `reminder`, `remind me`, or `remind` returns the note (`your text - @user`).
 
 ## Requirements
 - Node.js 18+

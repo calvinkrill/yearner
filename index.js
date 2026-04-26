@@ -30,6 +30,8 @@ const confessionQueues = new Map();
 const confessionCounters = new Map();
 const guildSettings = new Map();
 const guildMoodState = new Map();
+const userReminderNotes = new Map();
+let latestSharedReminder = null;
 const CONFESSION_PANEL_ID = 'yearn_confession_panel';
 const SUBMIT_CONFESSION_ID = 'yearn_submit_confession';
 const REPLY_CONFESSION_ID = 'yearn_reply_confession';
@@ -1255,6 +1257,65 @@ client.on('messageCreate', async (message) => {
       });
       return;
     }
+  }
+
+  const noteThisMatch = message.content.match(/^note this\s*[-:]\s*["“]?(.+?)["”]?\s*$/i);
+  if (noteThisMatch) {
+    const noteContent = noteThisMatch[1]?.trim();
+    if (!noteContent) return;
+
+    userReminderNotes.set(message.author.id, noteContent);
+    const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+    if (!proceed) return;
+    await message.reply({
+      content: `noted. i'll remember: "${noteContent}"`,
+      allowedMentions: { repliedUser: false }
+    });
+    return;
+  }
+
+  if (/^note this$/i.test(message.content.trim()) && message.reference?.messageId) {
+    const repliedMessage = await message.fetchReference().catch(() => null);
+    const noteContent = repliedMessage?.content?.trim();
+    const noteOwner = repliedMessage?.author;
+
+    const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+    if (!proceed) return;
+
+    if (!noteContent || !noteOwner || noteOwner.bot) {
+      await message.reply({
+        content: 'i could not save that note. reply to a user message with text in it.',
+        allowedMentions: { repliedUser: false }
+      });
+      return;
+    }
+
+    userReminderNotes.set(noteOwner.id, noteContent);
+    latestSharedReminder = { userId: noteOwner.id, note: noteContent };
+    await message.reply({
+      content: `noted for ${noteOwner}: "${noteContent}"`,
+      allowedMentions: { repliedUser: false }
+    });
+    return;
+  }
+
+  if (normalizedContent === 'reminder' || normalizedContent === 'remind me' || normalizedContent === 'remind') {
+    const mentionedUser = message.mentions.users.first();
+    const targetUserId = mentionedUser?.id || message.author.id;
+    const savedNote = userReminderNotes.get(targetUserId);
+    const fallbackSharedNote = !savedNote ? latestSharedReminder : null;
+    const displayUser = mentionedUser || message.author;
+    const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+    if (!proceed) return;
+    await message.reply({
+      content: savedNote
+        ? `${savedNote} - ${displayUser}`
+        : fallbackSharedNote
+          ? `${fallbackSharedNote.note} - <@${fallbackSharedNote.userId}>`
+        : "you haven't asked me to note anything yet.",
+      allowedMentions: { repliedUser: false }
+    });
+    return;
   }
 
   if (await handleYearn(message, {
