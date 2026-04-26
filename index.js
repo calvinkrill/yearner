@@ -16,7 +16,13 @@ const yearningLines = [
   "i saw something that reminded me of you", 
   "it's strange how some things don't fade", 
   "i keep expecting you to come back", 
-  "do you ever feel it too… or is it just me?" 
+  "do you ever feel it too… or is it just me?", 
+  "i keep rereading moments that are already gone", 
+  "sometimes i miss who i was with you", 
+  "the silence sounds like your name tonight", 
+  "i pretend i'm over it, but i still pause at your memory", 
+  "there's a space beside every thought where you used to be", 
+  "i still save things i wish i could tell you" 
 ]; 
 
 const rareLines = [ 
