@@ -1251,10 +1251,11 @@ async function sendYearnLog(guild, lines) {
   const getLogValue = (key) => parsedLines.find((line) => line.key === key)?.value;
   const eventName = getLogValue('event') || 'yearn activity';
   const sender = getLogValue('sender');
+  const userProfile = getLogValue('user profile') || getLogValue('profile');
   const channelRef = getLogValue('channel');
   const text = getLogValue('text');
   const metadata = parsedLines
-    .filter((line) => !['event', 'sender', 'channel', 'text'].includes(line.key))
+    .filter((line) => !['event', 'sender', 'user profile', 'profile', 'channel', 'text'].includes(line.key))
     .map((line) => `• **${line.key}:** ${line.value}`);
 
   const logEmbed = new EmbedBuilder()
@@ -1274,6 +1275,13 @@ async function sendYearnLog(guild, lines) {
     });
   }
 
+  if (userProfile) {
+    logEmbed.addFields({
+      name: 'user profile',
+      value: userProfile.length > 1024 ? `${userProfile.slice(0, 1021)}...` : userProfile
+    });
+  }
+
   if (metadata.length) {
     const metadataValue = metadata.join('\n');
     logEmbed.addFields({
@@ -1282,10 +1290,7 @@ async function sendYearnLog(guild, lines) {
     });
   }
 
-  await logsChannel.send({
-    embeds: [logEmbed],
-    content: `\`\`\`\n${logPayload.join('\n').slice(0, 1800)}\n\`\`\``
-  }).catch(() => null);
+  await logsChannel.send({ embeds: [logEmbed] }).catch(() => null);
 }
 
 // 🟢 ready 
@@ -1845,6 +1850,7 @@ client.on('interactionCreate', async (interaction) => {
         await sendYearnLog(interaction.guild, [
           `event: new anonymous yearn (#${confessionNumber})`,
           `sender: <@${interaction.user.id}> (${interaction.user.tag})`,
+          `user profile: id=${interaction.user.id} | username=${interaction.user.username} | global=${interaction.user.globalName || 'none'}`,
           `channel: <#${channel.id}>`,
           `message id: ${confessionMessage.id}`,
           `text: ${confessionText}`
@@ -1878,6 +1884,7 @@ client.on('interactionCreate', async (interaction) => {
       await sendYearnLog(interaction.guild, [
         'event: anonymous reply',
         `sender: <@${interaction.user.id}> (${interaction.user.tag})`,
+        `user profile: id=${interaction.user.id} | username=${interaction.user.username} | global=${interaction.user.globalName || 'none'}`,
         `channel: <#${interaction.channel.id}>`,
         `replied to message id: ${targetMessage?.id || 'unknown'}`,
         `text: ${replyText}`
