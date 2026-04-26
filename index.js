@@ -861,12 +861,13 @@ function extractConfessionTag(confessionText) {
 
 function buildConfessionEmbed(confessionText, confessionNumber) {
   const confessionTag = extractConfessionTag(confessionText);
+  const tagText = confessionTag ? ` • #${confessionTag}` : '';
 
   return new EmbedBuilder()
     .setColor(0x111827)
-    .setTitle('Anonymous Yearner')
+    .setTitle(`Anonymous Yearner (#${confessionNumber})`)
     .setDescription(`"${confessionText}"`)
-    .setFooter({ text: `Submitted • Entry #${confessionNumber}${confessionTag ? ` • #${confessionTag}` : ''}` })
+    .setFooter({ text: `Submitted anonymously${tagText}` })
     .setTimestamp(new Date());
 }
 
