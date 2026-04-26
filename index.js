@@ -863,6 +863,41 @@ async function runWithConfessionQueue(channelId, task) {
   return queuedTask;
 }
 
+async function getNextConfessionNumber(channel) {
+  if (!channel?.isTextBased?.()) return 1;
+
+  const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+  if (!messages) return 1;
+
+  let highestNumber = 0;
+  for (const message of messages.values()) {
+    const title = message.embeds?.[0]?.title;
+    if (!title) continue;
+
+    const match = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
+    if (!match) continue;
+
+    const parsed = Number.parseInt(match[1], 10);
+    if (Number.isNaN(parsed)) continue;
+    highestNumber = Math.max(highestNumber, parsed);
+  }
+
+  return highestNumber + 1;
+}
+
+async function runWithConfessionQueue(channelId, task) {
+  const queuedTask = (confessionQueues.get(channelId) || Promise.resolve())
+    .then(task)
+    .finally(() => {
+      if (confessionQueues.get(channelId) === queuedTask) {
+        confessionQueues.delete(channelId);
+      }
+    });
+
+  confessionQueues.set(channelId, queuedTask);
+  return queuedTask;
+}
+
 // 🟢 ready 
 client.once('ready', () => { 
   console.log(`Logged in as ${client.user.tag}`); 
@@ -1140,7 +1175,7 @@ client.on('interactionCreate', async (interaction) => {
 
       await runWithConfessionQueue(channel.id, async () => {
         const confessionNumber = await getNextConfessionNumber(channel);
-        const embed = buildConfessionEmbed(confessionText, confessionNumber);
+        const embed = buildConfessionEmbed(interaction.user.tag, confessionText, confessionNumber);
 
         const confessionMessage = await channel.send({
           embeds: [embed],
