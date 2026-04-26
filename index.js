@@ -828,49 +828,13 @@ function extractConfessionTag(confessionText) {
 
 function buildConfessionEmbed(confessionText, confessionNumber) {
   const confessionTag = extractConfessionTag(confessionText);
-  const displayToken = confessionTag || confessionNumber;
 
   return new EmbedBuilder()
     .setColor(0x111827)
-    .setTitle(`Anonymous Yearner (#${displayToken})`)
+    .setTitle('Anonymous Yearner')
     .setDescription(`"${confessionText}"`)
-    .setFooter({ text: `Submitted • Entry #${confessionNumber}` })
+    .setFooter({ text: `Submitted • Entry #${confessionNumber}${confessionTag ? ` • #${confessionTag}` : ''}` })
     .setTimestamp(new Date());
-}
-
-async function getNextConfessionNumber(channel) {
-  if (!channel?.isTextBased?.()) return 1;
-
-  const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-  if (!messages) return 1;
-
-  let highestNumber = 0;
-  for (const message of messages.values()) {
-    const title = message.embeds?.[0]?.title;
-    if (!title) continue;
-
-    const footerText = message.embeds?.[0]?.footer?.text ?? '';
-    const entryMatch = footerText.match(/Entry #(\d+)/);
-    const titleMatch = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
-    const parsed = Number.parseInt(entryMatch?.[1] ?? titleMatch?.[1] ?? '', 10);
-    if (Number.isNaN(parsed)) continue;
-    highestNumber = Math.max(highestNumber, parsed);
-  }
-
-  return highestNumber + 1;
-}
-
-async function runWithConfessionQueue(channelId, task) {
-  const queuedTask = (confessionQueues.get(channelId) || Promise.resolve())
-    .then(task)
-    .finally(() => {
-      if (confessionQueues.get(channelId) === queuedTask) {
-        confessionQueues.delete(channelId);
-      }
-    });
-
-  confessionQueues.set(channelId, queuedTask);
-  return queuedTask;
 }
 
 async function getNextConfessionNumber(channel) {
