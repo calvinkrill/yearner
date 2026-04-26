@@ -968,6 +968,17 @@ client.on('messageCreate', async (message) => {
   const previousMessage = lastMessageByUser.get(message.author.id);
   lastMessageByUser.set(message.author.id, message.content);
 
+  if (message.mentions.has(client.user)) {
+    const quote = random(timelyQuotes);
+    if (quote) {
+      await message.reply({
+        content: quote,
+        allowedMentions: { repliedUser: false }
+      });
+      return;
+    }
+  }
+
   if (await handleYearn(message)) {
     return;
   }
