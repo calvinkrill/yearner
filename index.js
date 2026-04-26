@@ -1169,6 +1169,24 @@ client.once('ready', () => {
       description: 'Create or set the yearn channel for this server'
     },
     {
+      name: 'quote',
+      description: 'Set the quote channel and role for timed quote pings',
+      options: [
+        {
+          name: 'channel',
+          description: 'Text channel for timely quotes',
+          type: ApplicationCommandOptionType.Channel,
+          required: true
+        },
+        {
+          name: 'role',
+          description: 'Role to ping when quotes are sent',
+          type: ApplicationCommandOptionType.Role,
+          required: true
+        }
+      ]
+    },
+    {
       name: 'yearnsettings',
       description: 'Configure yearner behavior for this server',
       options: [
