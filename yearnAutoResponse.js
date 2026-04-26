@@ -287,6 +287,15 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function shuffleArray(items) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function clean(text) {
   return text.toLowerCase().replace(/[^\w\sÀ-ÿñÑ]/g, '').trim();
 }
@@ -320,6 +329,75 @@ function generateYearnResponses(limit = 900) {
 
 const generatedYearnResponses = generateYearnResponses(5000);
 
+const quoteSets = {
+  yearners: [
+    '"Some hearts wait quietly, even when no one comes back."',
+    '"Yearning is love with nowhere to land."',
+    '"Missing them is loud, even in silence."',
+    '"You can still love deeply and choose yourself."'
+  ],
+  lovers: [
+    '"Love should feel safe, not confusing."',
+    '"A soft heart is not weakness, it is courage."',
+    '"Real love does not ask you to disappear."',
+    '"Love is beautiful, but so is your peace."'
+  ],
+  broken: [
+    '"Broken does not mean ruined; it means healing started."',
+    '"Even shattered hearts learn how to beat gently again."',
+    '"Pain can visit, but it does not own your future."',
+    '"You are allowed to rebuild slowly."'
+  ],
+  sad: [
+    '"Sad days are real, but they are not forever."',
+    '"Rest is a form of healing too."',
+    '"You do not have to carry every ache alone."',
+    '"Small steps still count on heavy days."'
+  ]
+};
+
+const quoteCategoryMap = {
+  miss: 'yearners',
+  relapse: 'yearners',
+  chat: 'yearners',
+  sana: 'yearners',
+  mahal: 'lovers',
+  moveon: 'broken',
+  seen: 'sad'
+};
+
+const shuffledState = new Map();
+
+function nextFromShufflePool(key, values) {
+  if (!Array.isArray(values) || values.length === 0) return null;
+
+  const normalizedValues = uniqueNormalized(values);
+  const current = shuffledState.get(key);
+  const needsRefill = !current || current.index >= current.pool.length || current.sourceSize !== normalizedValues.length;
+
+  if (needsRefill) {
+    const previous = current?.last ?? null;
+    let pool = shuffleArray(normalizedValues);
+
+    if (pool.length > 1 && previous && pool[0] === previous) {
+      [pool[0], pool[1]] = [pool[1], pool[0]];
+    }
+
+    shuffledState.set(key, {
+      pool,
+      index: 0,
+      last: previous,
+      sourceSize: normalizedValues.length
+    });
+  }
+
+  const state = shuffledState.get(key);
+  const item = state.pool[state.index];
+  state.index += 1;
+  state.last = item;
+  return item;
+}
+
 for (const category of yearnCategories) {
   category.triggers = uniqueNormalized(category.triggers);
   category.responses = uniqueNormalized(category.responses);
@@ -330,9 +408,20 @@ function getYearnReply(content) {
 
   for (const cat of yearnCategories) {
     if (cat.triggers.some((trigger) => text.includes(clean(trigger)))) {
-      return Math.random() < 0.5
-        ? `🎧 ${pickRandom(uniqueNormalized(yearnLyrics))}`
-        : `💔 ${pickRandom(generatedYearnResponses)}`;
+      const categoryReply = nextFromShufflePool(`cat:${cat.name}`, cat.responses);
+      const yearnLine = nextFromShufflePool('generated:yearn', generatedYearnResponses);
+      const lyricLine = nextFromShufflePool('lyrics:yearn', yearnLyrics);
+      const quoteGroup = quoteCategoryMap[cat.name] || 'yearners';
+      const quoteLine = nextFromShufflePool(`quote:${quoteGroup}`, quoteSets[quoteGroup]);
+
+      const candidates = uniqueNormalized([
+        categoryReply && `💬 ${categoryReply}`,
+        yearnLine && `💔 ${yearnLine}`,
+        lyricLine && `🎧 ${lyricLine}`,
+        quoteLine && `🕯️ ${quoteLine}`
+      ].filter(Boolean));
+
+      return nextFromShufflePool(`mixed:${cat.name}`, candidates);
     }
   }
 
