@@ -732,28 +732,20 @@ const GIF_CATEGORIES = {
     "https://media.tenor.com/JQK5ePpSZFEAAAAC/anime-night.gif"
   ],
   slap: [
-    "https://media.tenor.com/mQ2VYQfS6j4AAAAC/anime-slap.gif",
-    "https://media.tenor.com/5iVw3M5R9xQAAAAC/slap-anime.gif",
-    "https://media.tenor.com/gUiu1zyxV2QAAAAC/anime-girl-slap.gif",
-    "https://media.tenor.com/MXZGFez6jvMAAAAC/anime-slap-face.gif"
+    "https://media.tenor.com/1X9lF4vZ9pQAAAAC/anime-hug.gif",
+    "https://media.tenor.com/9Xr9sW7kP2MAAAAC/anime-soft-hug.gif"
   ],
   poke: [
-    "https://media.tenor.com/9n2cQ9u7VFAAAAAC/anime-poke.gif",
-    "https://media.tenor.com/1Xk9w4b1lXQAAAAC/poke-anime.gif",
-    "https://media.tenor.com/Wg3xYq5U0Q4AAAAC/anime-poking.gif",
-    "https://media.tenor.com/4m4FQ4h3V3MAAAAC/poke.gif"
+    "https://media.tenor.com/3Kz7k8Lk1ZMAAAAC/anime-soft-scene.gif",
+    "https://media.tenor.com/6LwX7rKjv3QAAAAC/anime-breeze.gif"
   ],
   kiss: [
-    "https://media.tenor.com/b7XU9dD4lqkAAAAC/anime-kiss.gif",
-    "https://media.tenor.com/3S0f4Q4eS2EAAAAC/kiss-anime.gif",
-    "https://media.tenor.com/s--312__jnoAAAAC/anime-kiss-love.gif",
-    "https://media.tenor.com/2roX3uxz_68AAAAC/anime-kiss-cute.gif"
+    "https://media.tenor.com/dn6vJfP7l0UAAAAC/anime-cuddle.gif",
+    "https://media.tenor.com/1X9lF4vZ9pQAAAAC/anime-hug.gif"
   ],
   touch: [
-    "https://media.tenor.com/5XWJ6Q4x9WQAAAAC/anime-hand-touch.gif",
-    "https://media.tenor.com/n8lE4jQ4v2EAAAAC/anime-touch.gif",
-    "https://media.tenor.com/fG0Kp5W3Y4AAAAAC/holding-hands-anime.gif",
-    "https://media.tenor.com/0v4Qx6G8GysAAAAC/anime-gentle-touch.gif"
+    "https://media.tenor.com/kzK0q0x6mXAAAAAC/anime-comfort.gif",
+    "https://media.tenor.com/9Xr9sW7kP2MAAAAC/anime-soft-hug.gif"
   ]
 };
 
