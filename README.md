@@ -10,6 +10,18 @@ A moody Discord bot that posts wistful, melancholic messages and occasionally re
 - Rare and glitch-style lines for variety.
 - Optional "beloved" user behavior via `!love @user`.
 - Lightweight in-memory memory callbacks.
+- Soft emotion commands with aesthetic embeds:
+  - `/miss @user`
+  - `/longfor @user`
+  - `/wait @user`
+  - `/yearn @user`
+  - `/dream @user`
+  - `/holdhand @user`
+  - `/stay @user`
+  - `/remember @user`
+  - `/comfort @user`
+  - `/promise @user`
+- Command-specific GIF categories (rain/night/comfort/waiting/etc.) with rare GIF surprises.
 
 ## Setup
 
@@ -29,6 +41,7 @@ A moody Discord bot that posts wistful, melancholic messages and occasionally re
 ## Usage
 
 - Use `!love @user` to set a user the bot yearns for.
+- Use soft commands like `/miss @user` and `/comfort @user` to send calm, emotion-themed embeds.
 - Talk in channels where the bot can read/send messages.
 
 ## Notes
