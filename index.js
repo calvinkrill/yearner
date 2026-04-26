@@ -950,20 +950,19 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // /soft command handling: /miss @user, /yearn @user, etc.
-  if (content.startsWith('/')) {
-    const [commandName] = content.slice(1).split(/\s+/);
-    const targetUser = message.mentions.users.first();
+  // soft command handling: /miss @user or miss @user, /yearn @user or yearn @user, etc.
+  const [firstToken] = content.trim().split(/\s+/);
+  const softCommandName = firstToken?.replace(/^\//, '');
+  const targetUser = message.mentions.users.first();
 
-    if (SOFT_COMMANDS[commandName]) {
-      if (!targetUser) {
-        await message.reply(`mention someone to use \`/${commandName} @user\`.`);
-        return;
-      }
-
-      await sendSoftCommandEmbed(message, commandName, targetUser);
+  if (softCommandName && SOFT_COMMANDS[softCommandName]) {
+    if (!targetUser) {
+      await message.reply(`mention someone to use \`/${softCommandName} @user\` or \`${softCommandName} @user\`.`);
       return;
     }
+
+    await sendSoftCommandEmbed(message, softCommandName, targetUser);
+    return;
   }
 
   // set beloved 
