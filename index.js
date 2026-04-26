@@ -30,6 +30,7 @@ const openai = process.env.OPENAI_API_KEY
   : null;
 
 const yearnSetupChannels = new Map();
+const yearnLogsChannels = new Map();
 const quoteChannelSettings = new Map();
 const confessionQueues = new Map();
 const confessionCounters = new Map();
@@ -1226,6 +1227,20 @@ async function runWithConfessionQueue(channelId, task) {
   return queuedTask;
 }
 
+async function sendYearnLog(guild, lines) {
+  if (!guild) return;
+
+  const configuredLogsChannelId = yearnLogsChannels.get(guild.id);
+  const logsChannel = (configuredLogsChannelId && guild.channels.cache.get(configuredLogsChannelId))
+    || guild.channels.cache.find((channel) => channel.type === ChannelType.GuildText && channel.name === 'logs');
+
+  if (!logsChannel || !logsChannel.isTextBased()) return;
+
+  await logsChannel.send({
+    content: ['**yearn logs**', ...lines].join('\n')
+  }).catch(() => null);
+}
+
 // 🟢 ready 
 client.once('ready', () => { 
   console.log(`Logged in as ${client.user.tag}`); 
@@ -1612,7 +1627,7 @@ client.on('interactionCreate', async (interaction) => {
     let yearnChannel = selectedYearnChannel || interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildText && channel.name === 'yearn'
     );
-    let logsChannel = interaction.guild.channels.cache.find(
+    let logsChannel = selectedLogsChannel || interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildText && channel.name === 'logs'
     );
 
@@ -1633,6 +1648,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     yearnSetupChannels.set(interaction.guild.id, yearnChannel.id);
+    yearnLogsChannels.set(interaction.guild.id, logsChannel.id);
     confessionCounters.set(yearnChannel.id, 0);
 
     const panelEmbed = new EmbedBuilder()
@@ -1778,6 +1794,14 @@ client.on('interactionCreate', async (interaction) => {
           components: [buildConfessionButtons('new')]
         });
         await confessionMessage.edit({ components: [buildConfessionButtons(confessionMessage.id)] });
+
+        await sendYearnLog(interaction.guild, [
+          `event: new anonymous yearn (#${confessionNumber})`,
+          `sender: <@${interaction.user.id}> (${interaction.user.tag})`,
+          `channel: <#${channel.id}>`,
+          `message id: ${confessionMessage.id}`,
+          `text: ${confessionText}`
+        ]);
       });
 
       await interaction.reply({ content: 'your anonymous yearn has been posted.', ephemeral: true });
@@ -1803,6 +1827,14 @@ client.on('interactionCreate', async (interaction) => {
       } else {
         await interaction.channel.send({ embeds: [replyEmbed] });
       }
+
+      await sendYearnLog(interaction.guild, [
+        'event: anonymous reply',
+        `sender: <@${interaction.user.id}> (${interaction.user.tag})`,
+        `channel: <#${interaction.channel.id}>`,
+        `replied to message id: ${targetMessage?.id || 'unknown'}`,
+        `text: ${replyText}`
+      ]);
 
       await interaction.reply({ content: 'your anonymous reply has been posted.', ephemeral: true });
     }
