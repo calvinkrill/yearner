@@ -366,6 +366,14 @@ const quoteCategoryMap = {
   seen: 'sad'
 };
 
+const songMoments = [
+  '🎵 this reminds me of something… Joji - Glimpse of Us',
+  '🎵 this reminds me of something… The 1975 - Somebody Else',
+  '🎵 this reminds me of something… Moira Dela Torre - Paubaya',
+  '🎵 this reminds me of something… Ben&Ben - Leaves',
+  '🎵 playlist for this mood: https://open.spotify.com/playlist/37i9dQZF1DX7qK8ma5wgG1'
+];
+
 const shuffledState = new Map();
 
 function nextFromShufflePool(key, values) {
@@ -413,12 +421,16 @@ function getYearnReply(content) {
       const lyricLine = nextFromShufflePool('lyrics:yearn', yearnLyrics);
       const quoteGroup = quoteCategoryMap[cat.name] || 'yearners';
       const quoteLine = nextFromShufflePool(`quote:${quoteGroup}`, quoteSets[quoteGroup]);
+      const songLine = Math.random() < 0.2
+        ? nextFromShufflePool('songs:yearn', songMoments)
+        : null;
 
       const candidates = uniqueNormalized([
         categoryReply && `💬 ${categoryReply}`,
         yearnLine && `💔 ${yearnLine}`,
         lyricLine && `🎧 ${lyricLine}`,
-        quoteLine && `🕯️ ${quoteLine}`
+        quoteLine && `🕯️ ${quoteLine}`,
+        songLine
       ].filter(Boolean));
 
       return nextFromShufflePool(`mixed:${cat.name}`, candidates);
@@ -497,7 +509,7 @@ async function getAIResponse(userMessage) {
   }
 }
 
-async function handleYearn(message) {
+async function handleYearn(message, settings = {}) {
   if (message.author.bot) return false;
 
   const text = clean(message.content);
@@ -507,10 +519,18 @@ async function handleYearn(message) {
 
   if (!isTriggered) return false;
 
-  // 30% chance for AI response if API key is present
-  if (process.env.OPENAI_API_KEY && Math.random() < 0.3) {
+  const aiRepliesEnabled = settings.aiRepliesEnabled !== false;
+  const aiReplyChance = Number.isFinite(settings.aiReplyChance)
+    ? Math.max(0, Math.min(1, settings.aiReplyChance))
+    : 0.3;
+
+  if (aiRepliesEnabled && process.env.OPENAI_API_KEY && Math.random() < aiReplyChance) {
     const aiReply = await getAIResponse(message.content);
     if (aiReply) {
+      if (typeof settings.beforeReply === 'function') {
+        const proceed = await settings.beforeReply();
+        if (!proceed) return true;
+      }
       await message.reply({
         content: `✨ ${aiReply}`,
         allowedMentions: { repliedUser: false }
@@ -521,6 +541,10 @@ async function handleYearn(message) {
 
   const reply = getYearnReply(message.content);
   if (!reply) return false;
+  if (typeof settings.beforeReply === 'function') {
+    const proceed = await settings.beforeReply();
+    if (!proceed) return true;
+  }
 
   await message.reply({
     content: reply,
