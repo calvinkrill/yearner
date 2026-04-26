@@ -810,7 +810,7 @@ function buildConfessionButtons(messageId = 'new') {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(SUBMIT_CONFESSION_ID)
-      .setLabel('Submit a confession!')
+      .setLabel('Submit a Yearn!')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId(`${REPLY_CONFESSION_ID}:${messageId}`)
@@ -822,7 +822,7 @@ function buildConfessionButtons(messageId = 'new') {
 function buildConfessionEmbed(authorTag, confessionText, confessionNumber) {
   return new EmbedBuilder()
     .setColor(0x111827)
-    .setTitle(`Anonymous Confession (#${confessionNumber})`)
+    .setTitle(`Anonymous Yearner (#${confessionNumber})`)
     .setDescription(`"${confessionText}"`)
     .setFooter({ text: `Submitted by ${authorTag}` });
 }
@@ -1003,8 +1003,8 @@ client.on('interactionCreate', async (interaction) => {
 
     const panelEmbed = new EmbedBuilder()
       .setColor(0x111827)
-      .setTitle('Anonymous Confession')
-      .setDescription('Click **Submit a confession!** to post anonymously.');
+      .setTitle('Anonymous Yearner')
+      .setDescription('Click **Submit a Yearn!** to post anonymously.');
 
     await yearnChannel.send({
       embeds: [panelEmbed],
@@ -1012,7 +1012,7 @@ client.on('interactionCreate', async (interaction) => {
     });
 
     await interaction.reply({
-      content: `yearn channel is ready: ${yearnChannel}. confession buttons were posted.`,
+      content: `yearn channel is ready: ${yearnChannel}. yearn submit button was posted.`,
       ephemeral: true
     });
     return;
@@ -1054,15 +1054,15 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.customId === SUBMIT_CONFESSION_ID) {
       const modal = new ModalBuilder()
         .setCustomId(CONFESSION_MODAL_ID)
-        .setTitle('Submit Anonymous Confession');
+        .setTitle('Submit Anonymous Yearn');
 
       const confessionInput = new TextInputBuilder()
         .setCustomId('confession_text')
-        .setLabel('Your confession')
+        .setLabel('Your yearn')
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true)
         .setMaxLength(500)
-        .setPlaceholder('Type what you want to confess...');
+        .setPlaceholder('Type what you want to yearn...');
 
       modal.addComponents(new ActionRowBuilder().addComponents(confessionInput));
       await interaction.showModal(modal);
@@ -1073,7 +1073,7 @@ client.on('interactionCreate', async (interaction) => {
       const messageId = interaction.customId.split(':')[1];
       const modal = new ModalBuilder()
         .setCustomId(`${REPLY_MODAL_PREFIX}${messageId}`)
-        .setTitle('Reply to Confession');
+        .setTitle('Reply to Yearn');
 
       const replyInput = new TextInputBuilder()
         .setCustomId('reply_text')
@@ -1101,7 +1101,7 @@ client.on('interactionCreate', async (interaction) => {
       });
       await confessionMessage.edit({ components: [buildConfessionButtons(confessionMessage.id)] });
 
-      await interaction.reply({ content: 'your anonymous confession has been posted.', ephemeral: true });
+      await interaction.reply({ content: 'your anonymous yearn has been posted.', ephemeral: true });
       return;
     }
 
