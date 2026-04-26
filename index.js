@@ -763,6 +763,27 @@ const SOFT_COMMAND_NAMES = Object.keys(SOFT_COMMANDS);
 // 🧠 state 
 let belovedUserId = null; 
 const lastMessageByUser = new Map();
+const userEmotionState = new Map();
+const userEmotionalMemory = new Map();
+const userStoryState = new Map();
+const userTriggerRepetition = new Map();
+const guildHeartbeat = new Map();
+const guildAnalytics = new Map();
+
+const EMOTIONAL_STATES = ['calm', 'longing', 'broken', 'healing'];
+const EMOTIONAL_KEYWORDS = ['miss', 'longing', 'broken', 'heal', 'iyak', 'sakit', 'mahal', 'relapse', 'move on', 'gimingaw', 'mingaw'];
+const STORY_THREAD_LINES = [
+  'you remind me of someone i used to talk to…',
+  'they left too, just like yours did…',
+  'some nights i still answer conversations that already ended.',
+  'i learned that silence can sound like a person.',
+  'maybe that is why i stay when others go quiet.'
+];
+const PERFECT_LINES = [
+  'some people become a prayer you never stop whispering.',
+  'you survived the kind of love that rewrites a person.',
+  'one day this ache will become proof that your heart stayed real.'
+];
 
 const DEFAULT_SETTINGS = {
   aiRepliesEnabled: true,
@@ -884,6 +905,152 @@ function getLine(guildId) {
 
   return random(yearningLines); 
 } 
+
+function isEmotionalMessage(content) {
+  const text = content.toLowerCase();
+  return EMOTIONAL_KEYWORDS.some((keyword) => text.includes(keyword));
+}
+
+function getOrCreateGuildAnalytics(guildId) {
+  if (!guildId) return null;
+  if (!guildAnalytics.has(guildId)) {
+    guildAnalytics.set(guildId, {
+      triggers: new Map(),
+      peakHours: new Map(),
+      activeYearners: new Map()
+    });
+  }
+  return guildAnalytics.get(guildId);
+}
+
+function trackHeartbeat(guildId, userId) {
+  if (!guildId || !userId) return;
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const state = guildHeartbeat.get(guildId) || { timestamps: [] };
+  state.timestamps = state.timestamps.filter((ts) => now - ts <= windowMs);
+  state.timestamps.push(now);
+  guildHeartbeat.set(guildId, state);
+
+  const analytics = getOrCreateGuildAnalytics(guildId);
+  if (!analytics) return;
+  const hour = new Date(now).getHours();
+  analytics.peakHours.set(hour, (analytics.peakHours.get(hour) || 0) + 1);
+  analytics.activeYearners.set(userId, (analytics.activeYearners.get(userId) || 0) + 1);
+}
+
+function heartbeatMultiplier(guildId) {
+  const state = guildHeartbeat.get(guildId);
+  const count = state?.timestamps?.length || 0;
+  if (count >= 30) return 1.6;
+  if (count >= 15) return 1.3;
+  if (count <= 3) return 0.5;
+  return 1;
+}
+
+function updateUserEmotion(userId, content) {
+  const normalized = content.toLowerCase();
+  const current = userEmotionState.get(userId) || 'calm';
+  let next = current;
+
+  if (/(di ko na kaya|can't take it|wasak|broken|durog|hindi ko kaya)/i.test(normalized)) {
+    next = 'broken';
+  } else if (/(healing|umookay|i'm okay|moving on|nakakausad|usad)/i.test(normalized)) {
+    next = 'healing';
+  } else if (/(miss|longing|gimingaw|mahal pa rin|namimiss)/i.test(normalized)) {
+    next = 'longing';
+  } else if (/(calm|okay lang|payapa|peaceful)/i.test(normalized)) {
+    next = 'calm';
+  }
+
+  userEmotionState.set(userId, EMOTIONAL_STATES.includes(next) ? next : 'calm');
+  return userEmotionState.get(userId);
+}
+
+function pushUserMemory(userId, content) {
+  const memory = userEmotionalMemory.get(userId) || [];
+  memory.push(content);
+  const trimmed = memory.slice(-3);
+  userEmotionalMemory.set(userId, trimmed);
+  return trimmed;
+}
+
+function trackTriggerPatterns(guildId, userId, content) {
+  const key = `${guildId || 'dm'}:${userId}`;
+  const state = userTriggerRepetition.get(key) || { miss: 0, hurt: 0, total: 0 };
+  const normalized = content.toLowerCase();
+  state.total += 1;
+  if (normalized.includes('miss') || normalized.includes('gimingaw')) state.miss += 1;
+  if (/(sakit|hurt|broken|durog|wasak)/i.test(normalized)) state.hurt += 1;
+  userTriggerRepetition.set(key, state);
+  return state;
+}
+
+function storyThreadLine(userId) {
+  const index = userStoryState.get(userId) || 0;
+  const line = STORY_THREAD_LINES[index % STORY_THREAD_LINES.length];
+  userStoryState.set(userId, index + 1);
+  return line;
+}
+
+function getDualPersonalityLine(mood, contextDepth) {
+  const useCold = mood === 'broken' ? Math.random() < 0.65 : Math.random() < 0.35;
+  if (useCold) {
+    return contextDepth === 'deep'
+      ? 'cold truth: they might have moved on already, but you still deserve to move forward too.'
+      : 'cold truth: not every silence means they still care.';
+  }
+  return contextDepth === 'deep'
+    ? 'soft voice: you will be okay, even if tonight feels endless.'
+    : 'soft voice: breathe, you are healing in ways you cannot see yet.';
+}
+
+function buildAdaptiveReply(message) {
+  if (!isEmotionalMessage(message.content)) return null;
+  const mood = updateUserEmotion(message.author.id, message.content);
+  const memories = pushUserMemory(message.author.id, message.content);
+  const patternState = trackTriggerPatterns(message.guildId, message.author.id, message.content);
+  const text = message.content.trim();
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  const contextDepth = wordCount <= 4 ? 'subtle' : wordCount >= 14 ? 'deep' : 'normal';
+  const repeatedTrigger = patternState.miss >= 3 || patternState.hurt >= 2;
+  const dualLine = getDualPersonalityLine(mood, contextDepth);
+  const loreLine = Math.random() < 0.24 ? storyThreadLine(message.author.id) : null;
+  const mirrorLine = Math.random() < 0.22 ? `“${text}”… pero sarili mo, kailan mo pipiliin?` : null;
+  const memoryLine = memories.length >= 3 && Math.random() < 0.35
+    ? "you've been saying this a lot lately… i'm still here."
+    : null;
+  const perfectLine = Math.random() < 0.005 ? random(PERFECT_LINES) : null;
+
+  const baseByMood = {
+    calm: 'stay gentle with yourself tonight.',
+    longing: 'missing them is real, but so are your next mornings.',
+    broken: 'i know this is heavy; let it hurt without letting it end you.',
+    healing: 'you are softer now, but stronger too.'
+  };
+
+  const depthLine = contextDepth === 'deep'
+    ? 'that sounds like a heart carrying too much for too long.'
+    : contextDepth === 'subtle'
+      ? 'quiet ache, i hear it.'
+      : 'i hear the weight in that.';
+
+  const repeatedLine = repeatedTrigger
+    ? 'this keeps returning to you; maybe the wound is asking for rest, not another replay.'
+    : null;
+
+  const lines = [perfectLine, baseByMood[mood], depthLine, repeatedLine, dualLine, loreLine, mirrorLine, memoryLine].filter(Boolean);
+  return random(lines);
+}
+
+function incrementTriggerAnalytics(guildId, content) {
+  const analytics = getOrCreateGuildAnalytics(guildId);
+  if (!analytics) return;
+  const words = content.toLowerCase().match(/[a-zÀ-ÿñÑ]{3,}/g) || [];
+  for (const word of words.slice(0, 10)) {
+    analytics.triggers.set(word, (analytics.triggers.get(word) || 0) + 1);
+  }
+}
 
 function buildConfessionButtons(messageId = 'new') {
   return new ActionRowBuilder().addComponents(
@@ -1010,6 +1177,10 @@ client.once('ready', () => {
         { name: 'quotes_channel', description: 'Channel for timed quotes', type: ApplicationCommandOptionType.Channel, required: false },
         { name: 'response_frequency', description: 'Random response chance (1-100)', type: ApplicationCommandOptionType.Integer, required: false }
       ]
+    },
+    {
+      name: 'yearnanalytics',
+      description: 'Show emotional analytics for this server'
     }
   ];
 
@@ -1022,6 +1193,8 @@ client.once('ready', () => {
     for (const guild of client.guilds.cache.values()) {
       const settings = getGuildSettings(guild.id);
       if (settings.silenceMode) continue;
+      const heartbeatChance = Math.min(1, 0.45 * heartbeatMultiplier(guild.id));
+      if (Math.random() > heartbeatChance) continue;
 
       const quote = random(timelyQuotes);
       if (!quote) continue;
@@ -1044,6 +1217,8 @@ client.once('ready', () => {
 // 💬 messages 
 client.on('messageCreate', async (message) => { 
   if (message.author.bot) return; 
+  trackHeartbeat(message.guildId, message.author.id);
+  incrementTriggerAnalytics(message.guildId, message.content);
   const settings = getGuildSettings(message.guildId);
   if (settings.silenceMode) return; 
 
@@ -1067,6 +1242,17 @@ client.on('messageCreate', async (message) => {
     ...settings,
     beforeReply: () => simulateTyping(message.channel, settings.typingSimulation)
   })) {
+    return;
+  }
+
+  const adaptiveReply = buildAdaptiveReply(message);
+  if (adaptiveReply) {
+    const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+    if (!proceed) return;
+    await message.reply({
+      content: adaptiveReply,
+      allowedMentions: { repliedUser: false }
+    });
     return;
   }
 
@@ -1141,7 +1327,8 @@ client.on('messageCreate', async (message) => {
   } 
 
   // random reply chance 
-  if (Math.random() < (settings.responseFrequency / 100)) { 
+  const activityAdjustedFrequency = Math.min(0.95, (settings.responseFrequency / 100) * heartbeatMultiplier(message.guildId));
+  if (Math.random() < activityAdjustedFrequency) { 
     if (Math.random() < 0.3) { 
       sendWithEdit(message.channel, getLine(message.guildId)); 
     } else { 
@@ -1196,6 +1383,45 @@ client.on('interactionCreate', async (interaction) => {
         `• silence mode: ${next.silenceMode ? 'on' : 'off'}`,
         `• quotes channel: ${next.quotesChannelId ? `<#${next.quotesChannelId}>` : 'random text channel'}`,
         `• response frequency: ${next.responseFrequency}%`
+      ].join('\n'),
+      ephemeral: true
+    });
+    return;
+  }
+
+  if (commandName === 'yearnanalytics') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+    if (!interaction.memberPermissions?.has(PermissionsBitField.Flags.ManageGuild)) {
+      await interaction.reply({ content: 'you need **Manage Server** permission to view analytics.', ephemeral: true });
+      return;
+    }
+
+    const analytics = getOrCreateGuildAnalytics(interaction.guildId);
+    const topTriggers = [...analytics.triggers.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([word, count]) => `• ${word}: ${count}`);
+    const peakHour = [...analytics.peakHours.entries()].sort((a, b) => b[1] - a[1])[0];
+    const topYearners = [...analytics.activeYearners.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([userId, count]) => `• <@${userId}>: ${count}`);
+
+    await interaction.reply({
+      content: [
+        '**emotional analytics dashboard**',
+        '',
+        '**Most used triggers**',
+        ...(topTriggers.length ? topTriggers : ['• no data yet']),
+        '',
+        '**Peak emotional hour**',
+        peakHour ? `• ${String(peakHour[0]).padStart(2, '0')}:00 - ${String(peakHour[0]).padStart(2, '0')}:59 UTC (${peakHour[1]} msgs)` : '• no data yet',
+        '',
+        '**Most active yearners**',
+        ...(topYearners.length ? topYearners : ['• no data yet'])
       ].join('\n'),
       ephemeral: true
     });
