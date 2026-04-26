@@ -25,6 +25,7 @@ const client = new Client({
 }); 
 
 const yearnSetupChannels = new Map();
+const quoteChannelSettings = new Map();
 const confessionQueues = new Map();
 const confessionCounters = new Map();
 const guildSettings = new Map();
@@ -1241,6 +1242,38 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.reply({
       content: `yearn channel is ready: ${yearnChannel}. yearn submit button was posted.`,
+      ephemeral: true
+    });
+    return;
+  }
+
+  if (commandName === 'quote') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageChannels)) {
+      await interaction.reply({ content: 'you need **Manage Channels** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    const quoteChannel = interaction.options.getChannel('channel');
+    const quoteRole = interaction.options.getRole('role');
+
+    if (!quoteChannel || quoteChannel.type !== ChannelType.GuildText || !quoteRole) {
+      await interaction.reply({ content: 'please provide a text channel and a role.', ephemeral: true });
+      return;
+    }
+
+    quoteChannelSettings.set(interaction.guild.id, {
+      channelId: quoteChannel.id,
+      roleId: quoteRole.id
+    });
+
+    await interaction.reply({
+      content: `timely quotes will be sent in ${quoteChannel} and ping ${quoteRole}.`,
       ephemeral: true
     });
     return;
