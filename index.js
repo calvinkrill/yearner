@@ -1236,8 +1236,55 @@ async function sendYearnLog(guild, lines) {
 
   if (!logsChannel || !logsChannel.isTextBased()) return;
 
+  const logPayload = Array.isArray(lines) ? lines : [];
+  const parsedLines = logPayload
+    .map((line) => {
+      const [rawKey, ...rest] = String(line).split(':');
+      if (!rawKey || rest.length === 0) return null;
+      return {
+        key: rawKey.trim().toLowerCase(),
+        value: rest.join(':').trim()
+      };
+    })
+    .filter(Boolean);
+
+  const getLogValue = (key) => parsedLines.find((line) => line.key === key)?.value;
+  const eventName = getLogValue('event') || 'yearn activity';
+  const sender = getLogValue('sender');
+  const channelRef = getLogValue('channel');
+  const text = getLogValue('text');
+  const metadata = parsedLines
+    .filter((line) => !['event', 'sender', 'channel', 'text'].includes(line.key))
+    .map((line) => `• **${line.key}:** ${line.value}`);
+
+  const logEmbed = new EmbedBuilder()
+    .setColor(0x0f172a)
+    .setTitle('yearn logs')
+    .setDescription(`**event:** ${eventName}`)
+    .setTimestamp(new Date())
+    .addFields(
+      { name: 'sender', value: sender || 'unknown', inline: true },
+      { name: 'channel', value: channelRef || 'unknown', inline: true }
+    );
+
+  if (text) {
+    logEmbed.addFields({
+      name: 'message',
+      value: text.length > 1024 ? `${text.slice(0, 1021)}...` : text
+    });
+  }
+
+  if (metadata.length) {
+    const metadataValue = metadata.join('\n');
+    logEmbed.addFields({
+      name: 'details',
+      value: metadataValue.length > 1024 ? `${metadataValue.slice(0, 1021)}...` : metadataValue
+    });
+  }
+
   await logsChannel.send({
-    content: ['**yearn logs**', ...lines].join('\n')
+    embeds: [logEmbed],
+    content: `\`\`\`\n${logPayload.join('\n').slice(0, 1800)}\n\`\`\``
   }).catch(() => null);
 }
 
