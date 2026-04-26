@@ -650,6 +650,22 @@ const SOFT_COMMANDS = {
   promise: [
     "🤍 {author} makes a quiet promise to {target}.",
     "🤍 ‘I’ll stay,’ says {author} to {target}."
+  ],
+  slap: [
+    "👋 {author} lightly slaps {target} (for dramatic effect).",
+    "👋 {author} gives {target} a playful slap."
+  ],
+  poke: [
+    "👉 {author} pokes {target}.",
+    "👉 {author} keeps poking {target} for attention."
+  ],
+  kiss: [
+    "💋 {author} gives {target} a soft kiss.",
+    "💋 {author} kisses {target} gently."
+  ],
+  touch: [
+    "🫳 {author} reaches out and gently touches {target}.",
+    "🫳 {author} gives {target} a soft touch."
   ]
 };
 
@@ -714,6 +730,22 @@ const GIF_CATEGORIES = {
     "https://media.tenor.com/7kL0k7kQ0ZAAAAAC/anime-sakura.gif",
     "https://media.tenor.com/xvZK7k8k0YAAAAAC/anime-sunset.gif",
     "https://media.tenor.com/JQK5ePpSZFEAAAAC/anime-night.gif"
+  ],
+  slap: [
+    "https://media.tenor.com/1X9lF4vZ9pQAAAAC/anime-hug.gif",
+    "https://media.tenor.com/9Xr9sW7kP2MAAAAC/anime-soft-hug.gif"
+  ],
+  poke: [
+    "https://media.tenor.com/3Kz7k8Lk1ZMAAAAC/anime-soft-scene.gif",
+    "https://media.tenor.com/6LwX7rKjv3QAAAAC/anime-breeze.gif"
+  ],
+  kiss: [
+    "https://media.tenor.com/dn6vJfP7l0UAAAAC/anime-cuddle.gif",
+    "https://media.tenor.com/1X9lF4vZ9pQAAAAC/anime-hug.gif"
+  ],
+  touch: [
+    "https://media.tenor.com/kzK0q0x6mXAAAAAC/anime-comfort.gif",
+    "https://media.tenor.com/9Xr9sW7kP2MAAAAC/anime-soft-hug.gif"
   ]
 };
 
