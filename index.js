@@ -1,5 +1,5 @@
 require('dotenv').config(); 
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js'); 
+const { Client, GatewayIntentBits, EmbedBuilder, ApplicationCommandOptionType } = require('discord.js'); 
 
 const client = new Client({ 
   intents: [ 
@@ -280,6 +280,8 @@ const RARE_GIFS = [
   "https://media.tenor.com/jKk5W6r8ZcMAAAAC/anime-tears.gif"
 ];
 
+const SOFT_COMMAND_NAMES = Object.keys(SOFT_COMMANDS);
+
 // 🧠 state 
 let belovedUserId = null; 
 let mood = "neutral"; 
@@ -370,6 +372,23 @@ function getLine() {
 // 🟢 ready 
 client.once('ready', () => { 
   console.log(`Logged in as ${client.user.tag}`); 
+
+  const slashCommands = SOFT_COMMAND_NAMES.map((name) => ({
+    name,
+    description: `Send a soft ${name} message`,
+    options: [
+      {
+        name: 'user',
+        description: 'Who this message is for',
+        type: ApplicationCommandOptionType.User,
+        required: true
+      }
+    ]
+  }));
+
+  client.application.commands.set(slashCommands)
+    .then(() => console.log(`Registered ${slashCommands.length} slash commands.`))
+    .catch((error) => console.error('Failed to register slash commands:', error));
 
   // mood changes 
   setInterval(updateMood, 1000 * 60 * 30); 
@@ -478,5 +497,44 @@ client.on('messageCreate', async (message) => {
     } 
   } 
 }); 
+
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+  if (silent) {
+    await interaction.reply({ content: '...i am quiet right now.', ephemeral: true });
+    return;
+  }
+
+  const commandName = interaction.commandName;
+  if (!SOFT_COMMANDS[commandName]) return;
+
+  const targetUser = interaction.options.getUser('user');
+  if (!targetUser) {
+    await interaction.reply({ content: 'mention someone for this command.', ephemeral: true });
+    return;
+  }
+
+  const templates = SOFT_COMMANDS[commandName];
+  const line = formatSoftLine(
+    random(templates),
+    interaction.member?.displayName || interaction.user.globalName || interaction.user.username,
+    targetUser.globalName || targetUser.username
+  );
+
+  const gifs = GIF_CATEGORIES[commandName] || [];
+  const selectedGif = gifs.length > 0 ? maybePickRareGif(random(gifs)) : null;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x2b2d31)
+    .setDescription(line)
+    .setFooter({ text: 'soft hours' })
+    .setTimestamp(new Date());
+
+  if (selectedGif) {
+    embed.setImage(selectedGif);
+  }
+
+  await interaction.reply({ embeds: [embed] });
+});
 
 client.login(process.env.TOKEN); 
