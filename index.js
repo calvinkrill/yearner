@@ -26,6 +26,9 @@ const client = new Client({
 
 const yearnSetupChannels = new Map();
 const confessionQueues = new Map();
+const confessionCounters = new Map();
+const guildSettings = new Map();
+const guildMoodState = new Map();
 const CONFESSION_PANEL_ID = 'yearn_confession_panel';
 const SUBMIT_CONFESSION_ID = 'yearn_submit_confession';
 const REPLY_CONFESSION_ID = 'yearn_reply_confession';
@@ -759,9 +762,55 @@ const SOFT_COMMAND_NAMES = Object.keys(SOFT_COMMANDS);
 
 // 🧠 state 
 let belovedUserId = null; 
-let mood = "neutral"; 
-let silent = false; 
 const lastMessageByUser = new Map();
+
+const DEFAULT_SETTINGS = {
+  aiRepliesEnabled: true,
+  aiReplyChance: 0.3,
+  moodSpeedMinutes: 30,
+  silenceMode: false,
+  quotesChannelId: null,
+  responseFrequency: 5,
+  typingSimulation: true
+};
+
+function getGuildSettings(guildId) {
+  if (!guildId) return DEFAULT_SETTINGS;
+  if (!guildSettings.has(guildId)) {
+    guildSettings.set(guildId, { ...DEFAULT_SETTINGS });
+  }
+  return guildSettings.get(guildId);
+}
+
+function getGuildMood(guildId) {
+  const settings = getGuildSettings(guildId);
+  const now = Date.now();
+  const state = guildMoodState.get(guildId);
+  const intervalMs = Math.max(1, settings.moodSpeedMinutes) * 60 * 1000;
+
+  if (!state || (now - state.updatedAt) >= intervalMs) {
+    const moods = ['neutral', 'distant', 'intense'];
+    const nextMood = random(moods);
+    guildMoodState.set(guildId, { mood: nextMood, updatedAt: now });
+    return nextMood;
+  }
+
+  return state.mood;
+}
+
+async function simulateTyping(channel, enabled = true) {
+  if (!enabled || !channel?.sendTyping) return true;
+
+  await channel.sendTyping().catch(() => {});
+  const typingMs = 700 + Math.floor(Math.random() * 2200);
+  await new Promise((resolve) => setTimeout(resolve, typingMs));
+
+  if (Math.random() < 0.08) {
+    return false;
+  }
+
+  return true;
+}
 
 // 🎲 helpers 
 function random(arr) { 
@@ -821,22 +870,17 @@ async function sendWithEdit(channel, text) {
   }, 2000 + Math.random() * 3000); 
 } 
 
-// 🌙 mood system 
-function updateMood() { 
-  const moods = ["neutral", "distant", "intense"]; 
-  mood = random(moods); 
-} 
-
 // 🔥 get line based on mood/time 
-function getLine() { 
+function getLine(guildId) { 
   const hour = new Date().getHours(); 
+  const moodNow = getGuildMood(guildId);
 
   if (hour >= 1 && hour <= 4) { 
-    return "it feels heavier at this hour…"; 
+    return 'it feels heavier at this hour…'; 
   } 
 
-  if (mood === "distant") return "maybe it's better this way"; 
-  if (mood === "intense") return "i can't stop thinking about you lately"; 
+  if (moodNow === 'distant') return "maybe it's better this way"; 
+  if (moodNow === 'intense') return "i can't stop thinking about you lately"; 
 
   return random(yearningLines); 
 } 
@@ -885,8 +929,18 @@ function normalizeConfessionNumber(parsedNumber) {
 async function getNextConfessionNumber(channel) {
   if (!channel?.isTextBased?.()) return 1;
 
+  const counter = confessionCounters.get(channel.id);
+  if (Number.isInteger(counter)) {
+    const next = counter + 1;
+    confessionCounters.set(channel.id, next);
+    return next;
+  }
+
   const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-  if (!messages) return 1;
+  if (!messages) {
+    confessionCounters.set(channel.id, 1);
+    return 1;
+  }
 
   let highestNumber = 0;
   for (const message of messages.values()) {
@@ -905,7 +959,9 @@ async function getNextConfessionNumber(channel) {
     highestNumber = Math.max(highestNumber, normalized);
   }
 
-  return highestNumber + 1;
+  const startAt = highestNumber > 0 ? highestNumber + 1 : 1;
+  confessionCounters.set(channel.id, startAt);
+  return startAt;
 }
 
 async function runWithConfessionQueue(channelId, task) {
@@ -943,6 +999,17 @@ client.once('ready', () => {
     {
       name: 'setupyearn',
       description: 'Create or set the yearn channel for this server'
+    },
+    {
+      name: 'yearnsettings',
+      description: 'Configure yearner behavior for this server',
+      options: [
+        { name: 'ai_replies', description: 'Enable AI auto replies', type: ApplicationCommandOptionType.Boolean, required: false },
+        { name: 'mood_speed_minutes', description: 'How often mood rotates', type: ApplicationCommandOptionType.Integer, required: false },
+        { name: 'silence_mode', description: 'Enable silence mode', type: ApplicationCommandOptionType.Boolean, required: false },
+        { name: 'quotes_channel', description: 'Channel for timed quotes', type: ApplicationCommandOptionType.Channel, required: false },
+        { name: 'response_frequency', description: 'Random response chance (1-100)', type: ApplicationCommandOptionType.Integer, required: false }
+      ]
     }
   ];
 
@@ -950,33 +1017,35 @@ client.once('ready', () => {
     .then(() => console.log(`Registered ${slashCommands.length} slash commands.`))
     .catch((error) => console.error('Failed to register slash commands:', error));
 
-  // mood changes 
-  setInterval(updateMood, 1000 * 60 * 30); 
+  // timely message: per-guild quote drop
+  setInterval(async () => {
+    for (const guild of client.guilds.cache.values()) {
+      const settings = getGuildSettings(guild.id);
+      if (settings.silenceMode) continue;
 
-  // silence toggle 
-  setInterval(() => { 
-    silent = Math.random() < 0.3; 
-  }, 1000 * 60 * 60); 
+      const quote = random(timelyQuotes);
+      if (!quote) continue;
 
-  // timely message: send only 1 quote every 10 minutes
-  setInterval(() => {
-    if (silent) return;
+      const preferred = settings.quotesChannelId ? guild.channels.cache.get(settings.quotesChannelId) : null;
+      const fallback = guild.channels.cache
+        .filter((c) => c.isTextBased() && c.viewable)
+        .random();
+      const channel = preferred?.isTextBased?.() ? preferred : fallback;
+      if (!channel) continue;
 
-    const channels = client.channels.cache.filter((c) => c.isTextBased());
-    const channel = channels.random();
-    if (!channel) return;
+      const proceed = await simulateTyping(channel, settings.typingSimulation);
+      if (!proceed) continue;
 
-    const quote = random(timelyQuotes);
-    if (!quote) return;
-
-    channel.send(quote).catch(() => {});
+      channel.send(quote).catch(() => {});
+    }
   }, 1000 * 60 * 10);
 }); 
 
 // 💬 messages 
 client.on('messageCreate', async (message) => { 
   if (message.author.bot) return; 
-  if (silent) return; 
+  const settings = getGuildSettings(message.guildId);
+  if (settings.silenceMode) return; 
 
   const content = message.content.toLowerCase(); 
   const normalizedContent = content.replace(/[^a-z0-9À-ÿñÑ\s]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -994,7 +1063,10 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  if (await handleYearn(message)) {
+  if (await handleYearn(message, {
+    ...settings,
+    beforeReply: () => simulateTyping(message.channel, settings.typingSimulation)
+  })) {
     return;
   }
 
@@ -1003,6 +1075,8 @@ client.on('messageCreate', async (message) => {
     category.responses = uniqueNormalized(category.responses);
 
     if (category.triggers.some(trigger => normalizedContent.includes(trigger.toLowerCase()))) {
+      const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+      if (!proceed) return;
       await message.reply({
         content: random(category.responses),
         allowedMentions: { repliedUser: false }
@@ -1018,10 +1092,14 @@ client.on('messageCreate', async (message) => {
 
   if (softCommandName && SOFT_COMMANDS[softCommandName]) {
     if (!targetUser) {
+      const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+      if (!proceed) return;
       await message.reply(`mention someone to use \`/${softCommandName} @user\` or \`${softCommandName} @user\`.`);
       return;
     }
 
+    const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+    if (!proceed) return;
     await sendSoftCommandEmbed(message, softCommandName, targetUser);
     return;
   }
@@ -1063,23 +1141,67 @@ client.on('messageCreate', async (message) => {
   } 
 
   // random reply chance 
-  if (Math.random() < 0.05) { 
+  if (Math.random() < (settings.responseFrequency / 100)) { 
     if (Math.random() < 0.3) { 
-      sendWithEdit(message.channel, getLine()); 
+      sendWithEdit(message.channel, getLine(message.guildId)); 
     } else { 
-      delayedReply(message, getLine()); 
+      const proceed = await simulateTyping(message.channel, settings.typingSimulation);
+      if (!proceed) return;
+      delayedReply(message, getLine(message.guildId)); 
     } 
   } 
 }); 
 
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-  if (silent) {
+  const settings = getGuildSettings(interaction.guildId);
+  if (settings.silenceMode && interaction.commandName !== 'yearnsettings') {
     await interaction.reply({ content: '...i am quiet right now.', ephemeral: true });
     return;
   }
 
   const commandName = interaction.commandName;
+  if (commandName === 'yearnsettings') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageGuild)) {
+      await interaction.reply({ content: 'you need **Manage Server** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    const next = { ...getGuildSettings(interaction.guildId) };
+    const aiReplies = interaction.options.getBoolean('ai_replies');
+    const moodSpeed = interaction.options.getInteger('mood_speed_minutes');
+    const silenceMode = interaction.options.getBoolean('silence_mode');
+    const quotesChannel = interaction.options.getChannel('quotes_channel');
+    const responseFrequency = interaction.options.getInteger('response_frequency');
+
+    if (aiReplies !== null) next.aiRepliesEnabled = aiReplies;
+    if (Number.isInteger(moodSpeed)) next.moodSpeedMinutes = Math.max(1, moodSpeed);
+    if (silenceMode !== null) next.silenceMode = silenceMode;
+    if (quotesChannel) next.quotesChannelId = quotesChannel.id;
+    if (Number.isInteger(responseFrequency)) next.responseFrequency = Math.max(1, Math.min(100, responseFrequency));
+
+    guildSettings.set(interaction.guildId, next);
+
+    await interaction.reply({
+      content: [
+        'yearn settings updated:',
+        `• AI replies: ${next.aiRepliesEnabled ? 'on' : 'off'}`,
+        `• mood speed: every ${next.moodSpeedMinutes} minute(s)`,
+        `• silence mode: ${next.silenceMode ? 'on' : 'off'}`,
+        `• quotes channel: ${next.quotesChannelId ? `<#${next.quotesChannelId}>` : 'random text channel'}`,
+        `• response frequency: ${next.responseFrequency}%`
+      ].join('\n'),
+      ephemeral: true
+    });
+    return;
+  }
+
   if (commandName === 'setupyearn') {
     if (!interaction.inGuild() || !interaction.guild) {
       await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
@@ -1105,6 +1227,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     yearnSetupChannels.set(interaction.guild.id, yearnChannel.id);
+    confessionCounters.set(yearnChannel.id, 0);
 
     const panelEmbed = new EmbedBuilder()
       .setColor(0x111827)
