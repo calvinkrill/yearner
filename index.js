@@ -25,6 +25,7 @@ const client = new Client({
 }); 
 
 const yearnSetupChannels = new Map();
+const quoteChannelSettings = new Map();
 const confessionQueues = new Map();
 const CONFESSION_PANEL_ID = 'yearn_confession_panel';
 const SUBMIT_CONFESSION_ID = 'yearn_submit_confession';
@@ -943,6 +944,25 @@ client.once('ready', () => {
     {
       name: 'setupyearn',
       description: 'Create or set the yearn channel for this server'
+    },
+    {
+      name: 'quote',
+      description: 'Set the channel and role for timely quotes',
+      options: [
+        {
+          name: 'channel',
+          description: 'Where timely quotes should be sent',
+          type: ApplicationCommandOptionType.Channel,
+          channel_types: [ChannelType.GuildText],
+          required: true
+        },
+        {
+          name: 'role',
+          description: 'Role to ping whenever a quote is sent',
+          type: ApplicationCommandOptionType.Role,
+          required: true
+        }
+      ]
     }
   ];
 
@@ -962,14 +982,24 @@ client.once('ready', () => {
   setInterval(() => {
     if (silent) return;
 
-    const channels = client.channels.cache.filter((c) => c.isTextBased());
-    const channel = channels.random();
-    if (!channel) return;
+    quoteChannelSettings.forEach(({ channelId, roleId }, guildId) => {
+      const guild = client.guilds.cache.get(guildId);
+      if (!guild) return;
 
-    const quote = random(timelyQuotes);
-    if (!quote) return;
+      const channel = guild.channels.cache.get(channelId);
+      if (!channel?.isTextBased()) return;
 
-    channel.send(quote).catch(() => {});
+      const quote = random(timelyQuotes);
+      if (!quote) return;
+
+      const roleMention = roleId ? `<@&${roleId}>` : '';
+      const content = [roleMention, quote].filter(Boolean).join(' ');
+
+      channel.send({
+        content,
+        allowedMentions: roleId ? { roles: [roleId] } : {}
+      }).catch(() => {});
+    });
   }, 1000 * 60 * 10);
 }); 
 
@@ -1118,6 +1148,38 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.reply({
       content: `yearn channel is ready: ${yearnChannel}. yearn submit button was posted.`,
+      ephemeral: true
+    });
+    return;
+  }
+
+  if (commandName === 'quote') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageChannels)) {
+      await interaction.reply({ content: 'you need **Manage Channels** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    const quoteChannel = interaction.options.getChannel('channel');
+    const quoteRole = interaction.options.getRole('role');
+
+    if (!quoteChannel || quoteChannel.type !== ChannelType.GuildText || !quoteRole) {
+      await interaction.reply({ content: 'please provide a text channel and a role.', ephemeral: true });
+      return;
+    }
+
+    quoteChannelSettings.set(interaction.guild.id, {
+      channelId: quoteChannel.id,
+      roleId: quoteRole.id
+    });
+
+    await interaction.reply({
+      content: `timely quotes will be sent in ${quoteChannel} and ping ${quoteRole}.`,
       ephemeral: true
     });
     return;
