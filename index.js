@@ -871,6 +871,17 @@ function buildConfessionEmbed(confessionText, confessionNumber) {
     .setTimestamp(new Date());
 }
 
+const LEGACY_CONFESSION_NUMBER_START = 4549;
+
+function normalizeConfessionNumber(parsedNumber) {
+  if (!Number.isInteger(parsedNumber) || parsedNumber <= 0) return null;
+  if (parsedNumber >= LEGACY_CONFESSION_NUMBER_START) {
+    return parsedNumber - LEGACY_CONFESSION_NUMBER_START + 1;
+  }
+
+  return parsedNumber;
+}
+
 async function getNextConfessionNumber(channel) {
   if (!channel?.isTextBased?.()) return 1;
 
@@ -887,7 +898,11 @@ async function getNextConfessionNumber(channel) {
     const titleMatch = title.match(/^Anonymous Yearner \(#(\d+)\)$/);
     const parsed = Number.parseInt(entryMatch?.[1] ?? titleMatch?.[1] ?? '', 10);
     if (Number.isNaN(parsed)) continue;
-    highestNumber = Math.max(highestNumber, parsed);
+
+    const normalized = normalizeConfessionNumber(parsed);
+    if (!normalized) continue;
+
+    highestNumber = Math.max(highestNumber, normalized);
   }
 
   return highestNumber + 1;
