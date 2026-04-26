@@ -36,17 +36,12 @@ A moody Discord bot for late-night longing: ambient quotes, multilingual auto-re
 - Before many replies, the bot simulates typing for a short moment.
 - Sometimes it types, pauses, and sends nothing to add realism and tension.
 
-### 5) Smart Auto Q&A replies (NEW)
-- The bot now detects question-style messages (`?`, `what`, `how`, `why`, etc.).
-- If `OPENAI_API_KEY` is configured, it can answer naturally in-thread like a human assistant.
-- Uses the official OpenAI SDK with `OPENAI_MODEL` (default: `gpt-4o-mini`).
-
-### 6) Sound / music integration
+### 5) Sound / music integration
 - Yearn responses can occasionally include song references.
 - Sometimes drops a mood-based playlist link with lines like:
   - `this reminds me of something…` + a song.
 
-### 7) Soft emotion commands (slash + message style)
+### 6) Soft emotion commands (slash + message style)
 Supported command names:
 - `/miss`
 - `/longfor`
@@ -73,7 +68,7 @@ Message-style variants also work if the first token matches a command name and a
 - `miss @user`
 - `/miss @user`
 
-### 8) Anonymous Yearn panel
+### 7) Anonymous Yearn panel
 - `/setupyearn` creates (or reuses) a `#yearn` text channel.
 - Posts a panel with:
   - **Submit a Yearn!** button (opens modal)
@@ -82,7 +77,7 @@ Message-style variants also work if the first token matches a command name and a
 - Replies are posted as anonymous embeds attached to the target confession when possible.
 - Queueing logic prevents confession-number collisions during rapid submissions.
 
-### 9) Server settings (admin configurable)
+### 8) Server settings (admin configurable)
 - `/yearnsettings` supports:
   - Toggle AI replies
   - Adjust mood speed (`mood_speed_minutes`)
@@ -90,7 +85,7 @@ Message-style variants also work if the first token matches a command name and a
   - Set a specific quote channel
   - Control random response frequency (`1-100%`)
 
-### 10) Legacy trigger interactions
+### 9) Legacy trigger interactions
 - Keyword trigger replies for words like `love`, `sleep`, and `bye`.
 - `!love @user` sets a “beloved” user ID for special reactions.
 - Personal reminder memory:
