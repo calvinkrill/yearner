@@ -3,6 +3,12 @@ const {
   Client,
   GatewayIntentBits,
   EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
   ApplicationCommandOptionType,
   ChannelType,
   PermissionsBitField
@@ -17,6 +23,11 @@ const client = new Client({
 }); 
 
 const yearnSetupChannels = new Map();
+const CONFESSION_PANEL_ID = 'yearn_confession_panel';
+const SUBMIT_CONFESSION_ID = 'yearn_submit_confession';
+const REPLY_CONFESSION_ID = 'yearn_reply_confession';
+const CONFESSION_MODAL_ID = 'yearn_confession_modal';
+const REPLY_MODAL_PREFIX = 'yearn_reply_modal_';
 
 // 🌙 Core lines 
 const yearningLines = [ 
@@ -391,6 +402,27 @@ function getLine() {
   return random(yearningLines); 
 } 
 
+function buildConfessionButtons(messageId = 'new') {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(SUBMIT_CONFESSION_ID)
+      .setLabel('Submit a confession!')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`${REPLY_CONFESSION_ID}:${messageId}`)
+      .setLabel('Reply')
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
+function buildConfessionEmbed(authorTag, confessionText, confessionNumber) {
+  return new EmbedBuilder()
+    .setColor(0x111827)
+    .setTitle(`Anonymous Confession (#${confessionNumber})`)
+    .setDescription(`"${confessionText}"`)
+    .setFooter({ text: `Submitted by ${authorTag}` });
+}
+
 // 🟢 ready 
 client.once('ready', () => { 
   console.log(`Logged in as ${client.user.tag}`); 
@@ -565,8 +597,18 @@ client.on('interactionCreate', async (interaction) => {
 
     yearnSetupChannels.set(interaction.guild.id, yearnChannel.id);
 
+    const panelEmbed = new EmbedBuilder()
+      .setColor(0x111827)
+      .setTitle('Anonymous Confession')
+      .setDescription('Click **Submit a confession!** to post anonymously.');
+
+    await yearnChannel.send({
+      embeds: [panelEmbed],
+      components: [buildConfessionButtons(CONFESSION_PANEL_ID)]
+    });
+
     await interaction.reply({
-      content: `yearn channel is ready: ${yearnChannel}`,
+      content: `yearn channel is ready: ${yearnChannel}. confession buttons were posted.`,
       ephemeral: true
     });
     return;
@@ -601,6 +643,87 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   await interaction.reply({ embeds: [embed] });
+});
+
+client.on('interactionCreate', async (interaction) => {
+  if (interaction.isButton()) {
+    if (interaction.customId === SUBMIT_CONFESSION_ID) {
+      const modal = new ModalBuilder()
+        .setCustomId(CONFESSION_MODAL_ID)
+        .setTitle('Submit Anonymous Confession');
+
+      const confessionInput = new TextInputBuilder()
+        .setCustomId('confession_text')
+        .setLabel('Your confession')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(500)
+        .setPlaceholder('Type what you want to confess...');
+
+      modal.addComponents(new ActionRowBuilder().addComponents(confessionInput));
+      await interaction.showModal(modal);
+      return;
+    }
+
+    if (interaction.customId.startsWith(`${REPLY_CONFESSION_ID}:`)) {
+      const messageId = interaction.customId.split(':')[1];
+      const modal = new ModalBuilder()
+        .setCustomId(`${REPLY_MODAL_PREFIX}${messageId}`)
+        .setTitle('Reply to Confession');
+
+      const replyInput = new TextInputBuilder()
+        .setCustomId('reply_text')
+        .setLabel('Your reply')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(400)
+        .setPlaceholder('Write a supportive reply...');
+
+      modal.addComponents(new ActionRowBuilder().addComponents(replyInput));
+      await interaction.showModal(modal);
+      return;
+    }
+  }
+
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId === CONFESSION_MODAL_ID) {
+      const confessionText = interaction.fields.getTextInputValue('confession_text').trim();
+      const confessionNumber = Math.floor(1000 + Math.random() * 9000);
+      const embed = buildConfessionEmbed(interaction.user.tag, confessionText, confessionNumber);
+
+      const confessionMessage = await interaction.channel.send({
+        embeds: [embed],
+        components: [buildConfessionButtons('new')]
+      });
+      await confessionMessage.edit({ components: [buildConfessionButtons(confessionMessage.id)] });
+
+      await interaction.reply({ content: 'your anonymous confession has been posted.', ephemeral: true });
+      return;
+    }
+
+    if (interaction.customId.startsWith(REPLY_MODAL_PREFIX)) {
+      const replyText = interaction.fields.getTextInputValue('reply_text').trim();
+      const messageId = interaction.customId.replace(REPLY_MODAL_PREFIX, '');
+
+      let targetMessage = null;
+      if (messageId && messageId !== 'new' && interaction.channel?.isTextBased()) {
+        targetMessage = await interaction.channel.messages.fetch(messageId).catch(() => null);
+      }
+
+      const replyEmbed = new EmbedBuilder()
+        .setColor(0x1f2937)
+        .setTitle('Anonymous Reply')
+        .setDescription(`"${replyText}"`);
+
+      if (targetMessage) {
+        await targetMessage.reply({ embeds: [replyEmbed] });
+      } else {
+        await interaction.channel.send({ embeds: [replyEmbed] });
+      }
+
+      await interaction.reply({ content: 'your anonymous reply has been posted.', ephemeral: true });
+    }
+  }
 });
 
 client.login(process.env.TOKEN); 
