@@ -965,6 +965,17 @@ client.on('messageCreate', async (message) => {
   const content = message.content.toLowerCase(); 
   const normalizedContent = content.replace(/[^a-z0-9À-ÿñÑ\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
+  if (message.mentions.has(client.user)) {
+    const quote = random(timelyQuotes);
+    if (quote) {
+      await message.reply({
+        content: quote,
+        allowedMentions: { repliedUser: false }
+      });
+      return;
+    }
+  }
+
   if (await handleYearn(message)) {
     return;
   }
