@@ -1,4 +1,5 @@
 require('dotenv').config(); 
+const { handleYearn } = require('./yearnAutoResponse');
 const {
   Client,
   GatewayIntentBits,
@@ -490,6 +491,7 @@ const flattenedTagalogYearnAutoResponses = {
 };
 
 const AUTO_RESPONSES = {
+  tagalogYearning: flattenedTagalogYearnAutoResponses,
   yearning: {
     triggers: [
       "i miss you", "i miss her", "i miss him", "i miss them",
@@ -921,6 +923,7 @@ client.on('messageCreate', async (message) => {
   if (silent) return; 
 
   const content = message.content.toLowerCase(); 
+  const normalizedContent = content.replace(/[^a-z0-9À-ÿñÑ\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
   if (await handleYearn(message)) {
     return;
@@ -930,7 +933,7 @@ client.on('messageCreate', async (message) => {
     category.triggers = uniqueNormalized(category.triggers);
     category.responses = uniqueNormalized(category.responses);
 
-    if (category.triggers.some(trigger => content.includes(trigger))) {
+    if (category.triggers.some(trigger => normalizedContent.includes(trigger.toLowerCase()))) {
       await message.reply({
         content: random(category.responses),
         allowedMentions: { repliedUser: false }
