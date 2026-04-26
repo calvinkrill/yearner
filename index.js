@@ -929,9 +929,10 @@ function trackHeartbeat(guildId, userId) {
   if (!guildId || !userId) return;
   const now = Date.now();
   const windowMs = 15 * 60 * 1000;
-  const state = guildHeartbeat.get(guildId) || { timestamps: [] };
+  const state = guildHeartbeat.get(guildId) || { timestamps: [], events: [] };
   state.timestamps = state.timestamps.filter((ts) => now - ts <= windowMs);
   state.timestamps.push(now);
+  state.events = (state.events || []).filter((event) => now - event.ts <= windowMs);
   guildHeartbeat.set(guildId, state);
 
   const analytics = getOrCreateGuildAnalytics(guildId);
@@ -948,6 +949,31 @@ function heartbeatMultiplier(guildId) {
   if (count >= 15) return 1.3;
   if (count <= 3) return 0.5;
   return 1;
+}
+
+function hasActiveChatsForQuotes(guild) {
+  if (!guild?.id) return false;
+  const state = guildHeartbeat.get(guild.id);
+  const recentEvents = state?.events || [];
+  if (recentEvents.length < 8) return false;
+
+  const uniqueUsers = new Set(recentEvents.map((event) => event.userId));
+  if (uniqueUsers.size < 3) return false;
+
+  const channelCounts = new Map();
+  for (const event of recentEvents) {
+    if (!event.channelId) continue;
+    channelCounts.set(event.channelId, (channelCounts.get(event.channelId) || 0) + 1);
+  }
+
+  for (const [channelId, count] of channelCounts.entries()) {
+    const channel = guild.channels.cache.get(channelId);
+    const name = channel?.name?.toLowerCase?.() || '';
+    if (name.includes('general') && count >= 4) return true;
+    if (count >= 6) return true;
+  }
+
+  return false;
 }
 
 function updateUserEmotion(userId, content) {
@@ -1213,6 +1239,7 @@ client.once('ready', () => {
     for (const guild of client.guilds.cache.values()) {
       const settings = getGuildSettings(guild.id);
       if (settings.silenceMode) continue;
+      if (!hasActiveChatsForQuotes(guild)) continue;
       const heartbeatChance = Math.min(1, 0.45 * heartbeatMultiplier(guild.id));
       if (Math.random() > heartbeatChance) continue;
 
@@ -1238,6 +1265,15 @@ client.once('ready', () => {
 client.on('messageCreate', async (message) => { 
   if (message.author.bot) return; 
   trackHeartbeat(message.guildId, message.author.id);
+  const heartbeatState = guildHeartbeat.get(message.guildId);
+  if (heartbeatState) {
+    heartbeatState.events = heartbeatState.events || [];
+    heartbeatState.events.push({
+      ts: Date.now(),
+      userId: message.author.id,
+      channelId: message.channelId
+    });
+  }
   incrementTriggerAnalytics(message.guildId, message.content);
   const settings = getGuildSettings(message.guildId);
   if (settings.silenceMode) return; 
