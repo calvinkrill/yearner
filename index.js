@@ -1193,7 +1193,21 @@ client.once('ready', () => {
     ...softCommands,
     {
       name: 'setupyearn',
-      description: 'Create or set the yearn channel for this server'
+      description: 'Create or assign the yearn and logs channels for this server',
+      options: [
+        {
+          name: 'yearn_channel',
+          description: 'Text channel to use for yearn posts',
+          type: ApplicationCommandOptionType.Channel,
+          required: false
+        },
+        {
+          name: 'logs_channel',
+          description: 'Text channel to use for logs',
+          type: ApplicationCommandOptionType.Channel,
+          required: false
+        }
+      ]
     },
     {
       name: 'quote',
@@ -1524,13 +1538,37 @@ client.on('interactionCreate', async (interaction) => {
       return;
     }
 
-    let yearnChannel = interaction.guild.channels.cache.find(
+    const selectedYearnChannel = interaction.options.getChannel('yearn_channel');
+    const selectedLogsChannel = interaction.options.getChannel('logs_channel');
+
+    if (selectedYearnChannel && selectedYearnChannel.type !== ChannelType.GuildText) {
+      await interaction.reply({ content: 'yearn_channel must be a text channel.', ephemeral: true });
+      return;
+    }
+
+    if (selectedLogsChannel && selectedLogsChannel.type !== ChannelType.GuildText) {
+      await interaction.reply({ content: 'logs_channel must be a text channel.', ephemeral: true });
+      return;
+    }
+
+    let yearnChannel = selectedYearnChannel || interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildText && channel.name === 'yearn'
+    );
+    let logsChannel = selectedLogsChannel || interaction.guild.channels.cache.find(
+      (channel) => channel.type === ChannelType.GuildText && channel.name === 'logs'
     );
 
     if (!yearnChannel) {
       yearnChannel = await interaction.guild.channels.create({
         name: 'yearn',
+        type: ChannelType.GuildText,
+        reason: `/setupyearn requested by ${interaction.user.tag}`
+      });
+    }
+
+    if (!logsChannel) {
+      logsChannel = await interaction.guild.channels.create({
+        name: 'logs',
         type: ChannelType.GuildText,
         reason: `/setupyearn requested by ${interaction.user.tag}`
       });
@@ -1550,7 +1588,12 @@ client.on('interactionCreate', async (interaction) => {
     });
 
     await interaction.reply({
-      content: `yearn channel is ready: ${yearnChannel}. yearn submit button was posted.`,
+      content: [
+        `${yearnChannel} - for yearn`,
+        `${logsChannel} - for logs`,
+        '',
+        `yearn submit button was posted in ${yearnChannel}.`
+      ].join('\n'),
       ephemeral: true
     });
     return;
