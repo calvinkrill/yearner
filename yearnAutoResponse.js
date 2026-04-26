@@ -1,6 +1,8 @@
 // yearnAutoResponse.js
 // 900+ triggers | No Cooldown | Tagalog Yearner System
 
+const https = require('https');
+
 const yearnCategories = [
   {
     name: 'miss',
@@ -11,7 +13,11 @@ const yearnCategories = [
       'miss kita araw araw', 'hinahanap kita', 'hinahanap ko siya', 'hinahanap pa rin kita', 'miss ko presensya mo',
       'miss ko chat mo', 'miss ko goodnight mo', 'miss ko good morning mo', 'miss ko kulit mo', 'miss ko lambing mo',
       'namimiss ko lahat sayo', 'miss kita kahit wala ka na', 'miss pa rin kita kahit tapos na',
-      'miss kita kahit di pwede', 'miss kita kahit masakit', 'miss kita kahit ako lang'
+      'miss kita kahit di pwede', 'miss kita kahit masakit', 'miss kita kahit ako lang',
+      'mingaw ko nimo', 'gimingaw ko nimo', 'gimingaw ko niya', 'mingaw na kaayo ko nimo', 'mingaw kos imong tingog', 
+      'mingaw kos imong katawa', 'mingaw kos imong yakap', 'mingaw kos imong chat', 'mingaw kos imong goodnight', 
+      'mingaw kos imong good morning', 'gimingaw ko sa tanan nimo', 'pangitaon gihapon tika', 'pangitaon gihapon nako siya', 
+      'bisan wala naka mingaw gihapon ko', 'bisan sakit mingaw gihapon ko', 'bisan di pwede mingaw gihapon ko'
     ],
     responses: [
       'miss mo lang yan, wag mo muna i-chat 😭',
@@ -35,7 +41,11 @@ const yearnCategories = [
       'mahal kita kahit hindi pwede', 'mahal kita kahit tapos na',
       'mahal ko pa rin siya kahit may iba na', 'mahal pa rin kita kahit ako nalang',
       'gusto ko pa rin siya kahit di ako pinili', 'mahal kita kahit hindi tayo',
-      'love ko pa rin siya kahit wala na kami'
+      'love ko pa rin siya kahit wala na kami',
+      'gihigugma gihapon tika', 'love pa gihapon tika', 'gusto pa gihapon tika', 'naa pa koy feelings nimo', 
+      'wala pa nawala akong feelings', 'gihigugma gihapon nako siya', 'bisan wala na love pa gihapon', 
+      'bisan sakit love pa gihapon tika', 'bisan di pwede love pa gihapon', 'ikaw gihapon akong gusto', 
+      'ikaw gihapon akong gipangita'
     ],
     responses: [
       'mahal mo pa, pero mahalin mo rin sarili mo.',
@@ -57,7 +67,10 @@ const yearnCategories = [
       'ichachat ko na siya', 'chat ko ba siya ngayon', 'mag message ba ako sa kanya',
       'send ko na ba message ko', 'replyan ko na ba siya', 'mag dm na ba ako',
       'kausapin ko na ba siya', 'mag reach out ba ako', 'mag sorry ba ako sa kanya',
-      'ichachat ko ba kahit gabi na', 'chat ko ba kahit seen lang'
+      'ichachat ko ba kahit gabi na', 'chat ko ba kahit seen lang',
+      'i-chat nako siya?', 'mo chat ko niya?', 'replyan nako siya?', 'send nako?', 'dm nako?', 
+      'story reply nako?', 'istoryahon nako siya?', 'mangumusta ko niya?', 'mag sorry ko niya?', 
+      'mo reach out ko?', 'chat nako bisan gabii na?', 'chat nako bisan seen lang?'
     ],
     responses: [
       'NO muna 😭',
@@ -79,7 +92,10 @@ const yearnCategories = [
       'sana bumalik siya sa akin', 'sana tayo pa rin', 'sana hindi natapos',
       'sana hindi kami naghiwalay', 'sana ako ang pinili', 'sana may chance pa',
       'sana pwede pa', 'sana maayos pa', 'sana hindi nawala',
-      'sana hindi siya nagbago'
+      'sana hindi siya nagbago',
+      'unta kita gihapon', 'unta kami gihapon', 'unta mubalik siya', 'unta pili-on ko niya', 
+      'unta ako nalang', 'unta naa pay chance', 'unta ma okay pa', 'unta wala natapos', 
+      'unta wala siya nagbag-o', 'unta pwede pa', 'unta di ko niya gibiyaan'
     ],
     responses: [
       'sana era is dangerous 😭',
@@ -101,7 +117,10 @@ const yearnCategories = [
       'di niya ako nireplyan', 'seen niya lang ako', 'online siya pero di nag reply',
       'active siya pero di ako pinansin', 'late siya mag reply', 'di na siya nag update',
       'di na siya nag goodnight', 'di na siya nag good morning',
-      'di na siya nag chat', 'di na siya nag effort'
+      'di na siya nag chat', 'di na siya nag effort',
+      'seen ra', 'delivered ra', 'wala ni reply', 'dugay mo reply', 'dry kaayo siya mo reply', 
+      'online siya pero wala ni reply', 'active siya pero wala ko tagda', 'wala na siya ni update', 
+      'wala na siya nag goodnight', 'wala na siya nag good morning', 'wala na siya nag effort'
     ],
     responses: [
       'seen zone hurts pero wag mag double chat.',
@@ -119,12 +138,15 @@ const yearnCategories = [
   {
     name: 'moveon',
     triggers: [
-      'di ko siya makalimutan', 'paano siya kalimutan', 'hirap kalimutan',
+      'di ko siya makalimtan', 'paano siya kalimutan', 'hirap kalimutan',
       'di ko kaya mag move on', 'di pa ako naka move on',
       'hanggang ngayon siya pa rin', 'siya pa rin talaga', 'di ko mabitawan',
       'di ko ma let go', 'di ako maka move on',
       'hirap mag move on', 'moving on hurts',
-      'di ko kaya kalimutan siya', 'di ko kaya mawala siya'
+      'di ko kaya kalimutan siya', 'di ko kaya mawala siya',
+      'di nako siya makalimtan', 'lisod kaayo siya kalimtan', 'di ko kaya mag move on', 
+      'wa pa ko naka move on', 'siya gihapon hangtod karon', 'di ko siya mabitawan', 
+      'di ko siya ma let go', 'sakit kaayo mag move on', 'di nako kaya mawala siya'
     ],
     responses: [
       'one day, hindi na ganito kasakit.',
@@ -137,6 +159,39 @@ const yearnCategories = [
       'healing is quiet but real.',
       'di mo kailangan kalimutan agad.',
       'unti-unti, kakayanin.'
+    ]
+  },
+  {
+    name: 'relapse',
+    triggers: [
+      "relapse", "relapse malala", "relapse na naman", "relapse hours", "delulu era", 
+      "delulu na naman", "miss ko siya", "namimiss ko siya", "miss ko pa rin", "siya pa rin", 
+      "ikaw pa rin", "hanggang ngayon siya", "di pa rin tapos", "di pa ako okay", 
+      "di ko siya makalimutan", "di ko siya mabitawan", "di ko kaya mag move on", 
+      "hirap mag move on", "chat ko ba siya", "ichachat ko ba siya", "wag ko ba siyang i-chat", 
+      "seen lang", "delivered lang", "di siya nag reply", "online siya pero di nag reply", 
+      "sana bumalik", "sana kami ulit", "sana tayo ulit", "sana may chance pa", 
+      "what if kami pa rin", "what if siya talaga", "mahal ko pa rin siya", "mahal pa rin kita", 
+      "gusto ko pa rin siya", "di pa rin nawawala feelings ko", "usad na", "move on na", 
+      "let go na", "tama na beh", "protect your peace", "piliin mo sarili mo",
+      "relapse na pud", "relapse napud", "delulu era napud", "delulu na pud", 
+      "gimingaw ko niya", "gimingaw ko nimo", "mingaw ko niya", "mingaw ko nimo", 
+      "mingaw gihapon", "siya gihapon", "ikaw gihapon", "hangtod karon siya", "wa pa ko okay", 
+      "di pa ko okay", "di nako siya makalimtan", "di nako siya mabitawan", "di ko ka move on", 
+      "lisod mag move on", "chat nako siya", "i-chat nako siya", "mo chat ko niya", 
+      "ayaw na i-chat", "seen ra", "delivered ra", "wala siya ni reply", 
+      "online siya pero wa ni reply", "unta mubalik", "unta kami gihapon", "unta kita gihapon", 
+      "unta naa pay chance", "what if kami gihapon", "what if siya jud", 
+      "love pa gihapon nako siya", "gihigugma gihapon tika", "gusto pa gihapon nako siya", 
+      "wa pa nawala akong feelings", "usad na jud", "biyae na", "undangi na", 
+      "amping sa imong peace", "pili-a imong kaugalingon"
+    ],
+    responses: [
+      'relapse hours are the hardest. 🫂',
+      'it\'s okay to feel this way, just don\'t stay there for too long.',
+      'hinga lang nang malalim. relapse is part of healing.',
+      'ayaw na pag relapse bestie, amping sa imong self.',
+      'pahuway sa gamay. valid imong gibati pero ayaw kalimti imong peace.'
     ]
   }
 ];
@@ -151,7 +206,17 @@ const yearnLyrics = [
   'Sa dami ng tao, ikaw pa rin ang hinahanap ng puso ko.',
   'Hindi na tayo, pero ikaw pa rin ang gusto ko.',
   'Ang sakit pala magmahal nang mag-isa.',
-  'Mahal pa rin kita, kahit hindi na pwede.'
+  'Mahal pa rin kita, kahit hindi na pwede.',
+  'Kung pwede pa lang ibalik ang tanan, dili unta tika gibuhian.', 
+  'Sa hilom nga gabii, imong ngalan gihapon akong mahunahunaan.', 
+  'Wala naka diri, pero ikaw gihapon akong gipangita.', 
+  'Gisulay tika kalimtan, pero akong kasingkasing di mosugot.', 
+  'Kung kita jud, nganong murag ako nalang ang nagkupot?', 
+  'Hinay-hinay tika gibiyaan, pero tinuod tika nga gihigugma.', 
+  'Sa kadaghan sa tao, ikaw gihapon ang gipangita sa akong kasingkasing.', 
+  'Dili na kita, pero ikaw gihapon akong gusto.', 
+  'Sakit diay kaayo ang mahigugma nga ikaw ra usa.', 
+  'Gihigugma gihapon tika, bisan di na pwede.'
 ];
 
 const responseOpeners = [
@@ -164,7 +229,17 @@ const responseOpeners = [
   'soft heart detected',
   'valid yan',
   'wag maghabol',
-  'healing muna'
+  'healing muna',
+  'mingaw ra na nimo', 
+  'yearner spotted kaayo', 
+  'ginhawa sa gamay', 
+  'ayaw sa pag relapse', 
+  'amping sa imong peace', 
+  'pili-a pud imong kaugalingon', 
+  'soft heart kaayo ka', 
+  'valid na imong gibati', 
+  'ayaw na pag gukod', 
+  'healing sa ta'
 ];
 
 const responseMiddles = [
@@ -177,7 +252,17 @@ const responseMiddles = [
   'kahit hindi madali',
   'kahit may what if pa',
   'kahit namimiss mo siya',
-  'kahit gusto mo siyang balikan'
+  'kahit gusto mo siyang balikan',
+  'pero ayaw sa siya i-chat', 
+  'pero atimana pud imong kaugalingon', 
+  'kay kapoy na pud imong kasingkasing', 
+  'kay dili tanan angay balikan', 
+  'bisan sakit karon', 
+  'bisan siya gihapon imong gihunahuna', 
+  'bisan dili sayon', 
+  'bisan daghan pa kag what if', 
+  'bisan gimingaw ka niya', 
+  'bisan ganahan ka mubalik niya'
 ];
 
 const responseEndings = [
@@ -190,7 +275,12 @@ const responseEndings = [
   'pahinga ka muna.',
   'wag ubusin sarili.',
   'love yourself din.',
-  'kakayanin mo yan.'
+  'kakayanin mo yan.',
+  'yearner era kaayo.', 
+  'pahuway sa gamay.', 
+  'ayaw hutda imong kaugalingon.', 
+  'love yourself pud.', 
+  'makaya ra na nimo.'
 ];
 
 function pickRandom(arr) {
@@ -228,7 +318,7 @@ function generateYearnResponses(limit = 900) {
   return uniqueNormalized(responses);
 }
 
-const generatedYearnResponses = generateYearnResponses(900);
+const generatedYearnResponses = generateYearnResponses(5000);
 
 for (const category of yearnCategories) {
   category.triggers = uniqueNormalized(category.triggers);
@@ -249,8 +339,96 @@ function getYearnReply(content) {
   return null;
 }
 
+/**
+ * Generates an AI response using an OpenAI-compatible API.
+ * Requires OPENAI_API_KEY in .env
+ */
+async function getAIResponse(userMessage) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const apiBase = process.env.OPENAI_API_BASE || 'https://api.openai.com/v1';
+  const model = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+
+  const systemPrompt = `You are a melancholic, moody, and poetic AI assistant. 
+  You respond to people who are "yearning" or feeling heartbreak. 
+  Your tone is soft, slightly sad, and very empathetic. 
+  You can speak in English, Tagalog, or Bisaya (Cebuano). 
+  Keep your responses short (1-2 sentences) and meaningful. 
+  Do not use emojis unless they are 😭, 💔, or 🫂.
+  Current context: Someone is expressing longing or pain.`;
+
+  const data = JSON.stringify({
+    model: model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+    max_tokens: 100,
+    temperature: 0.8
+  });
+
+  try {
+    const url = new URL(`${apiBase}/chat/completions`);
+    const options = {
+      hostname: url.hostname,
+      path: url.pathname + url.search,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+
+    return new Promise((resolve) => {
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', (chunk) => body += chunk);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(body);
+            if (json.choices && json.choices[0] && json.choices[0].message) {
+              resolve(json.choices[0].message.content.trim());
+            } else {
+              resolve(null);
+            }
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      });
+
+      req.on('error', () => resolve(null));
+      req.write(data);
+      req.end();
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
 async function handleYearn(message) {
   if (message.author.bot) return false;
+
+  const text = clean(message.content);
+  const isTriggered = yearnCategories.some(cat => 
+    cat.triggers.some(trigger => text.includes(clean(trigger)))
+  );
+
+  if (!isTriggered) return false;
+
+  // 30% chance for AI response if API key is present
+  if (process.env.OPENAI_API_KEY && Math.random() < 0.3) {
+    const aiReply = await getAIResponse(message.content);
+    if (aiReply) {
+      await message.reply({
+        content: `✨ ${aiReply}`,
+        allowedMentions: { repliedUser: false }
+      });
+      return true;
+    }
+  }
 
   const reply = getYearnReply(message.content);
   if (!reply) return false;
