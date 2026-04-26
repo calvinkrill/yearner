@@ -333,13 +333,10 @@ async function sendSoftCommandEmbed(message, commandName, targetUser) {
   return true;
 }
 
-// ⏳ delayed reply 
-function delayedReply(message, text) { 
-  const delay = 3000 + Math.random() * 8000; 
-  setTimeout(() => { 
-    message.reply(text).catch(() => {}); 
-  }, delay); 
-} 
+// ⚡ instant reply
+function delayedReply(message, text) {
+  return message.reply(text).catch(() => {});
+}
 
 // ✏️ edit effect 
 async function sendWithEdit(channel, text) { 
