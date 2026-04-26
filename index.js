@@ -1527,10 +1527,21 @@ client.on('interactionCreate', async (interaction) => {
     let yearnChannel = interaction.guild.channels.cache.find(
       (channel) => channel.type === ChannelType.GuildText && channel.name === 'yearn'
     );
+    let logsChannel = interaction.guild.channels.cache.find(
+      (channel) => channel.type === ChannelType.GuildText && channel.name === 'logs'
+    );
 
     if (!yearnChannel) {
       yearnChannel = await interaction.guild.channels.create({
         name: 'yearn',
+        type: ChannelType.GuildText,
+        reason: `/setupyearn requested by ${interaction.user.tag}`
+      });
+    }
+
+    if (!logsChannel) {
+      logsChannel = await interaction.guild.channels.create({
+        name: 'logs',
         type: ChannelType.GuildText,
         reason: `/setupyearn requested by ${interaction.user.tag}`
       });
@@ -1550,7 +1561,12 @@ client.on('interactionCreate', async (interaction) => {
     });
 
     await interaction.reply({
-      content: `yearn channel is ready: ${yearnChannel}. yearn submit button was posted.`,
+      content: [
+        `${yearnChannel} - for yearn`,
+        `${logsChannel} - for logs`,
+        '',
+        `yearn submit button was posted in ${yearnChannel}.`
+      ].join('\n'),
       ephemeral: true
     });
     return;
