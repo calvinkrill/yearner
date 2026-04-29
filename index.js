@@ -797,6 +797,7 @@ const PERFECT_LINES = [
 
 const DEFAULT_SETTINGS = {
   autoResponseEnabled: true,
+  autoResponseChannelId: null,
   aiRepliesEnabled: true,
   aiReplyChance: 0.3,
   moodSpeedMinutes: 30,
@@ -1362,6 +1363,18 @@ client.once('ready', () => {
       ]
     },
     {
+      name: 'autoresponse',
+      description: 'Set the only channel where autoresponses are allowed',
+      options: [
+        {
+          name: 'channel',
+          description: 'Text channel for autoresponses only',
+          type: ApplicationCommandOptionType.Channel,
+          required: true
+        }
+      ]
+    },
+    {
       name: 'yearnsettings',
       description: 'Configure yearner behavior for this server',
       options: [
@@ -1471,6 +1484,7 @@ client.on('messageCreate', async (message) => {
   }
 
   if (!settings.autoResponseEnabled) return;
+  if (settings.autoResponseChannelId && message.channelId !== settings.autoResponseChannelId) return;
 
   if (await handleYearn(message, {
     ...settings,
@@ -1580,7 +1594,7 @@ client.on('messageCreate', async (message) => {
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   const settings = getGuildSettings(interaction.guildId);
-  if (settings.silenceMode && !['yearnsettings', 'config'].includes(interaction.commandName)) {
+  if (settings.silenceMode && !['yearnsettings', 'config', 'autoresponse'].includes(interaction.commandName)) {
     await interaction.reply({ content: '...i am quiet right now.', ephemeral: true });
     return;
   }
@@ -1605,6 +1619,36 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.reply({
       content: `autoresponse is now **${next.autoResponseEnabled ? 'on' : 'off'}**.`,
+      ephemeral: true
+    });
+    return;
+  }
+
+  if (commandName === 'autoresponse') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageGuild)) {
+      await interaction.reply({ content: 'you need **Manage Server** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    const channel = interaction.options.getChannel('channel');
+    if (!channel?.isTextBased?.()) {
+      await interaction.reply({ content: 'please provide a text channel.', ephemeral: true });
+      return;
+    }
+
+    const next = { ...getGuildSettings(interaction.guildId) };
+    next.autoResponseEnabled = true;
+    next.autoResponseChannelId = channel.id;
+    guildSettings.set(interaction.guildId, next);
+
+    await interaction.reply({
+      content: `autoresponse is now locked to <#${channel.id}>.`,
       ephemeral: true
     });
     return;
