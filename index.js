@@ -21,7 +21,8 @@ const client = new Client({
   intents: [ 
     GatewayIntentBits.Guilds, 
     GatewayIntentBits.GuildMessages, 
-    GatewayIntentBits.MessageContent 
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
   ] 
 }); 
 
@@ -34,6 +35,7 @@ const yearnLogsChannels = new Map();
 const quoteChannelSettings = new Map();
 const confessionQueues = new Map();
 const confessionCounters = new Map();
+const lofiVoiceSettings = new Map();
 const guildSettings = new Map();
 const guildMoodState = new Map();
 const userReminderNotes = new Map();
@@ -1333,6 +1335,18 @@ client.once('ready', () => {
       ]
     },
     {
+      name: 'setuplofi',
+      description: 'Set a voice channel for 24/7 lo-fi mode',
+      options: [
+        {
+          name: 'voice_channel',
+          description: 'Voice channel where the bot should stay',
+          type: ApplicationCommandOptionType.Channel,
+          required: true
+        }
+      ]
+    },
+    {
       name: 'quote',
       description: 'Set the quote channel and role for timed quote pings',
       options: [
@@ -1802,6 +1816,41 @@ client.on('interactionCreate', async (interaction) => {
         `${logsChannel} - for logs`,
         '',
         `yearn submit button was posted in ${yearnChannel}.`
+      ].join('\n'),
+      ephemeral: true
+    });
+    return;
+  }
+
+  if (commandName === 'setuplofi') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageChannels)) {
+      await interaction.reply({ content: 'you need **Manage Channels** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    const voiceChannel = interaction.options.getChannel('voice_channel');
+    if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+      await interaction.reply({ content: 'voice_channel must be a voice channel.', ephemeral: true });
+      return;
+    }
+
+    lofiVoiceSettings.set(interaction.guild.id, {
+      channelId: voiceChannel.id,
+      enabledAt: Date.now()
+    });
+
+    await interaction.reply({
+      content: [
+        `saved lo-fi channel: ${voiceChannel}.`,
+        '',
+        '⚠️ voice playback runtime is not installed in this build yet.',
+        'install `@discordjs/voice` + ffmpeg to enable always-on music streaming.'
       ].join('\n'),
       ephemeral: true
     });
