@@ -84,6 +84,7 @@ Message-style variants also work if the first token matches a command name and a
   - Enable/disable silence mode
   - Set a specific quote channel
   - Control random response frequency (`1-100%`)
+- `/autoresponse channel:#your-channel` locks auto-replies to one channel only.
 
 ### 9) Legacy trigger interactions
 - Keyword trigger replies for words like `love`, `sleep`, and `bye`.
