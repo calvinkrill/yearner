@@ -21,7 +21,8 @@ const client = new Client({
   intents: [ 
     GatewayIntentBits.Guilds, 
     GatewayIntentBits.GuildMessages, 
-    GatewayIntentBits.MessageContent 
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates
   ] 
 }); 
 
@@ -34,6 +35,7 @@ const yearnLogsChannels = new Map();
 const quoteChannelSettings = new Map();
 const confessionQueues = new Map();
 const confessionCounters = new Map();
+const lofiVoiceSettings = new Map();
 const guildSettings = new Map();
 const guildMoodState = new Map();
 const userReminderNotes = new Map();
@@ -1178,6 +1180,26 @@ function normalizeConfessionNumber(parsedNumber) {
   return parsedNumber;
 }
 
+async function keepBotInLofiChannel(guild) {
+  if (!guild?.id) return false;
+  const config = lofiVoiceSettings.get(guild.id);
+  if (!config?.channelId) return false;
+
+  const me = guild.members.me;
+  const targetChannel = guild.channels.cache.get(config.channelId);
+  if (!me || !targetChannel || targetChannel.type !== ChannelType.GuildVoice) return false;
+
+  if (me.voice?.channelId === targetChannel.id) return true;
+
+  try {
+    await me.voice.setChannel(targetChannel, 'lofi 24/7 keepalive');
+    return true;
+  } catch (error) {
+    console.error(`Failed to move bot to lo-fi channel for guild ${guild.id}:`, error);
+    return false;
+  }
+}
+
 async function getNextConfessionNumber(channel) {
   if (!channel?.isTextBased?.()) return 1;
 
@@ -1296,7 +1318,7 @@ async function sendYearnLog(guild, lines) {
 }
 
 // 🟢 ready 
-client.once('ready', () => { 
+client.once('ready', async () => { 
   console.log(`Logged in as ${client.user.tag}`); 
 
   const softCommands = SOFT_COMMAND_NAMES.map((name) => ({
@@ -1329,6 +1351,18 @@ client.once('ready', () => {
           description: 'Text channel to use for logs',
           type: ApplicationCommandOptionType.Channel,
           required: false
+        }
+      ]
+    },
+    {
+      name: 'setuplofi',
+      description: 'Set a voice channel for 24/7 lo-fi mode',
+      options: [
+        {
+          name: 'voice_channel',
+          description: 'Voice channel where the bot should stay',
+          type: ApplicationCommandOptionType.Channel,
+          required: true
         }
       ]
     },
@@ -1394,6 +1428,10 @@ client.once('ready', () => {
   client.application.commands.set(slashCommands)
     .then(() => console.log(`Registered ${slashCommands.length} slash commands.`))
     .catch((error) => console.error('Failed to register slash commands:', error));
+
+  for (const guild of client.guilds.cache.values()) {
+    await keepBotInLofiChannel(guild);
+  }
 
   // timely message: per-guild quote drop
   setInterval(async () => {
@@ -1808,6 +1846,41 @@ client.on('interactionCreate', async (interaction) => {
     return;
   }
 
+  if (commandName === 'setuplofi') {
+    if (!interaction.inGuild() || !interaction.guild) {
+      await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
+      return;
+    }
+
+    const memberPermissions = interaction.memberPermissions;
+    if (!memberPermissions?.has(PermissionsBitField.Flags.ManageChannels)) {
+      await interaction.reply({ content: 'you need **Manage Channels** permission to use this.', ephemeral: true });
+      return;
+    }
+
+    const voiceChannel = interaction.options.getChannel('voice_channel');
+    if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+      await interaction.reply({ content: 'voice_channel must be a voice channel.', ephemeral: true });
+      return;
+    }
+
+    lofiVoiceSettings.set(interaction.guild.id, {
+      channelId: voiceChannel.id,
+      enabledAt: Date.now()
+    });
+
+    await keepBotInLofiChannel(interaction.guild);
+
+    await interaction.reply({
+      content: [
+        `saved lo-fi channel: ${voiceChannel}.`,
+        'i joined and will try to stay there 24/7.'
+      ].join('\n'),
+      ephemeral: true
+    });
+    return;
+  }
+
   if (commandName === 'quote') {
     if (!interaction.inGuild() || !interaction.guild) {
       await interaction.reply({ content: 'this command only works inside a server.', ephemeral: true });
@@ -1975,6 +2048,16 @@ client.on('interactionCreate', async (interaction) => {
 
       await interaction.reply({ content: 'your anonymous reply has been posted.', ephemeral: true });
     }
+  }
+});
+
+client.on('voiceStateUpdate', async (oldState, newState) => {
+  if (!oldState.guild) return;
+  const me = oldState.guild.members.me;
+  if (!me?.id || newState.id !== me.id) return;
+
+  if (!newState.channelId) {
+    await keepBotInLofiChannel(oldState.guild);
   }
 });
 
